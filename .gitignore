@@ -1,0 +1,8 @@
+.bloop/
+.bsp/
+.idea/
+
+target/
+*.ps1
+*.sql
+!db_schema.sql
