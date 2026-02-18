@@ -12,7 +12,8 @@ The system combines:
 -   Concurrent provider processing
 -   Persistent ingestion run tracking
 -   Historical price tracking (WIP)
--   Decoupled dashboard service (FastAPI + React) (WIP)
+-   [Decoupled dashboard API that also works as API gateway (FastAPI) ](https://github.com/AranaDeDoros/PriceStreamDashboard)
+  - Dashboard frontend to visualize runs data (React).
 
 ------------------------------------------------------------------------
 
@@ -27,7 +28,7 @@ The system combines:
 - Doobie (PostgreSQL)
 - Circe
 
-**Dashboard Service** 
+**Dashboard** 
 - FastAPI 
 - PostgreSQL
 - React
