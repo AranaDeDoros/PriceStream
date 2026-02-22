@@ -13,30 +13,30 @@ import org.http4s.Method.{GET, POST}
 import org.http4s.implicits.*
 import org.http4s.{Request, Uri}
 import org.http4s.circe.CirceEntityCodec._
-
+import io.circe.Json
 import java.time.Instant
 
 class TrackingRoutesSpec extends CatsEffectSuite {
 
   private class StubTrackingService(
-                                     trackPriceResult: Either[TrackingError, Unit],
-                                     historyResult: Either[TrackingError, List[PriceUpdate]],
-                                     productsResult: List[TrackedProduct],
-                                     observedPlatform: Ref[IO, Option[Option[String]]]
-                                   ) extends TrackingService[IO] {
+    trackPriceResult: Either[TrackingError, Unit],
+    historyResult: Either[TrackingError, List[PriceUpdate]],
+    productsResult: List[TrackedProduct],
+    observedPlatform: Ref[IO, Option[Option[String]]]
+  ) extends TrackingService[IO] {
 
     override def trackPrice(
-                             platform: String,
-                             externalId: String,
-                             price: BigDecimal,
-                             name: Option[String],
-                             url: Option[String]
-                           ): IO[Either[TrackingError, Unit]] = IO.pure(trackPriceResult)
+      platform: String,
+      externalId: String,
+      price: BigDecimal,
+      name: Option[String],
+      url: Option[String]
+    ): IO[Either[TrackingError, Unit]] = IO.pure(trackPriceResult)
 
     override def getHistory(
-                             platform: String,
-                             externalId: String
-                           ): IO[Either[TrackingError, List[PriceUpdate]]] = IO.pure(historyResult)
+      platform: String,
+      externalId: String
+    ): IO[Either[TrackingError, List[PriceUpdate]]] = IO.pure(historyResult)
 
     override def listProducts(platform: Option[String]): IO[List[TrackedProduct]] =
       observedPlatform.set(Some(platform)) *> IO.pure(productsResult)
@@ -71,7 +71,7 @@ class TrackingRoutesSpec extends CatsEffectSuite {
         TrackPriceRequest("amazon", "SKU-1", BigDecimal("-1"), None, None)
       )
       response <- new TrackingRoutes[IO](service).httpRoutes.orNotFound.run(request)
-      body <- response.as[String]
+      body     <- response.as[String]
     } yield {
       assertEquals(response.status.code, 400)
       assert(body.contains("Invalid price"))
@@ -91,11 +91,12 @@ class TrackingRoutesSpec extends CatsEffectSuite {
       )
       request = Request[IO](GET, Uri.unsafeFromString("/history/amazon/SKU-1"))
       response <- new TrackingRoutes[IO](service).httpRoutes.orNotFound.run(request)
-      body <- response.as[String]
+      body     <- response.as[Json]
     } yield {
       assertEquals(response.status.code, 200)
-      assert(body.contains("149.5"))
-      assert(body.contains(recordedAt.toString))
+      val firstRecord = body.hcursor.downArray
+      assertEquals(firstRecord.get[BigDecimal]("price"), Right(BigDecimal("149.50")))
+      assertEquals(firstRecord.get[String]("recordedAt"), Right(recordedAt.toString))
     }
   }
 
@@ -123,14 +124,15 @@ class TrackingRoutesSpec extends CatsEffectSuite {
         observedPlatform = observed
       )
       request = Request[IO](GET, uri"/products?platform=AMAZON")
-      response <- new TrackingRoutes[IO](service).httpRoutes.orNotFound.run(request)
-      body <- response.as[String]
+      response     <- new TrackingRoutes[IO](service).httpRoutes.orNotFound.run(request)
+      body         <- response.as[Json]
       seenPlatform <- observed.get
     } yield {
       assertEquals(response.status.code, 200)
       assertEquals(seenPlatform, Some(Some("amazon")))
-      assert(body.contains("\"platform\":\"5\""))
-      assert(body.contains("\"externalId\":\"SKU-1\""))
+      val firstProduct = body.hcursor.downArray
+      assertEquals(firstProduct.get[String]("platform"), Right("5"))
+      assertEquals(firstProduct.get[String]("externalId"), Right("SKU-1"))
     }
   }
 }

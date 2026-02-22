@@ -9,7 +9,8 @@ import org.aranadedoros.pricestream.services.ExternalAPIService
 import org.http4s.Method.GET
 import org.http4s.{Request, Uri}
 import org.http4s.implicits.*
-
+import org.http4s.circe.CirceEntityCodec.*
+import io.circe.Json
 import java.time.Instant
 import java.util.UUID
 
@@ -40,11 +41,12 @@ class ExternalAPIRoutesSpec extends CatsEffectSuite {
 
     for {
       response <- httpApp.run(request)
-      body     <- response.as[String]
+      body     <- response.as[Json]
     } yield {
       assertEquals(response.status.code, 200)
-      assert(body.contains(runId.toString))
-      assert(body.contains("\"status\":\"Completed\""))
+      val firstRun = body.hcursor.downArray
+      assertEquals(firstRun.get[String]("id"), Right(runId.toString))
+      assertEquals(firstRun.get[String]("status"), Right("Completed"))
     }
   }
 
@@ -53,10 +55,10 @@ class ExternalAPIRoutesSpec extends CatsEffectSuite {
 
     for {
       response <- httpApp.run(request)
-      body     <- response.as[String]
+      body     <- response.as[Json]
     } yield {
       assertEquals(response.status.code, 200)
-      assert(body.contains(runId.toString))
+      assertEquals(body.hcursor.get[String]("id"), Right(runId.toString))
     }
   }
 
@@ -75,10 +77,13 @@ class ExternalAPIRoutesSpec extends CatsEffectSuite {
 
     for {
       response <- httpApp.run(request)
-      body     <- response.as[String]
+      body     <- response.as[Json]
     } yield {
       assertEquals(response.status.code, 200)
-      assert(body.contains("\"status\":\"Completed\""))
+      val firstRun = body.hcursor.downArray
+      assertEquals(firstRun.get[String]("id"), Right(runId.toString))
+      val statusField = firstRun.downField("status")
+      assert(statusField.downField("Completed").focus.nonEmpty)
     }
   }
 
