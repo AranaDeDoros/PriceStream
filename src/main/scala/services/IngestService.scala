@@ -9,10 +9,10 @@ import cats.effect.IO
 import cats.syntax.all.*
 
 class IngestService(
-                     providers: Seq[ProductProvider],
-                     productRepo: ProductRepository,
-                     priceRepo: PriceRepository
-                   ) {
+  providers: Seq[ProductProvider],
+  productRepo: ProductRepository,
+  priceRepo: PriceRepository
+):
 
   def ingestOnce(): IO[Unit] =
     providers.parTraverse_(ingestFromProvider)
@@ -24,17 +24,17 @@ class IngestService(
     } yield ()
 
   private def processProduct(
-                              provider: ProductProvider,
-                              externalProduct: TrackedProduct
-                            ): IO[Unit] =
+    provider: ProductProvider,
+    externalProduct: TrackedProduct
+  ): IO[Unit] =
     for {
       persisted <- ensureProductExists(externalProduct)
       _         <- updatePriceIfChanged(provider, persisted)
     } yield ()
 
   private def ensureProductExists(
-                                   p: TrackedProduct
-                                 ): IO[TrackedProduct] =
+    p: TrackedProduct
+  ): IO[TrackedProduct] =
     productRepo
       .findByExternalId(p.platformId, p.externalId)
       .flatMap {
@@ -43,9 +43,9 @@ class IngestService(
       }
 
   private def updatePriceIfChanged(
-                                    provider: ProductProvider,
-                                    product: TrackedProduct
-                                  ): IO[Unit] =
+    provider: ProductProvider,
+    product: TrackedProduct
+  ): IO[Unit] =
     for {
       maybeNewPrice <- provider.fetchPrice(product.externalId)
       _ <- maybeNewPrice match {
@@ -59,4 +59,3 @@ class IngestService(
           }
       }
     } yield ()
-}

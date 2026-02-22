@@ -5,19 +5,17 @@ import io.circe.Decoder
 import io.circe.generic.semiauto.*
 
 case class DummyProductDto(
-                            id: Long,
-                            title: String,
-                            price: Double
-                          )
+  id: Long,
+  title: String,
+  price: Double
+)
 
 case class DummyProductsResponse(
-                                  products: List[DummyProductDto]
-                                )
+  products: List[DummyProductDto]
+)
 
-object DummyProductDto {
+object DummyProductDto:
   given Decoder[DummyProductDto] = deriveDecoder
-}
 
-object DummyProductsResponse {
+object DummyProductsResponse:
   given Decoder[DummyProductsResponse] = deriveDecoder
-}

@@ -15,10 +15,10 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 
 class TrackingRoutes[F[_]: Async](
-                                   service: TrackingService[F]
-                                 ) extends Http4sDsl[F] {
+  service: TrackingService[F]
+) extends Http4sDsl[F]:
 
-  given EntityDecoder[F, TrackPriceRequest] = jsonOf
+  given EntityDecoder[F, TrackPriceRequest]         = jsonOf
   given EntityEncoder[F, List[PriceUpdateResponse]] = jsonEncoderOf
 
   private def mapError(error: TrackingError): F[Response[F]] =
@@ -34,7 +34,7 @@ class TrackingRoutes[F[_]: Async](
     }
 
   object PlatformQueryParamMatcher
-    extends OptionalQueryParamDecoderMatcher[String]("platform")
+      extends OptionalQueryParamDecoderMatcher[String]("platform")
 
   val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F] {
 
@@ -58,7 +58,6 @@ class TrackingRoutes[F[_]: Async](
 
       } yield response
 
-
     // GET /api/history/{platform}/{externalId}
     case GET -> Root / "history" / platform / externalId =>
       service
@@ -66,8 +65,9 @@ class TrackingRoutes[F[_]: Async](
         .flatMap {
           case Right(history) =>
             val response =
-              history.map(h =>
-                PriceUpdateResponse(h.price, h.recordedAt)
+              history.map(
+                h =>
+                  PriceUpdateResponse(h.price, h.recordedAt)
               )
 
             Ok(response)
@@ -80,21 +80,20 @@ class TrackingRoutes[F[_]: Async](
     // GET /api/products?platform=amazon
     case GET -> Root / "products" :? PlatformQueryParamMatcher(platformOpt) =>
       val normalized = platformOpt.map(_.toLowerCase)
-      service.listProducts(normalized).flatMap { products =>
-        val response =
-          products.map { p =>
-            ProductResponse(
-              platform = p.platformId.toString,
-              externalId = p.externalId,
-              name = p.name,
-              url = p.url
-            )
-          }
+      service.listProducts(normalized).flatMap {
+        products =>
+          val response =
+            products.map {
+              p =>
+                ProductResponse(
+                  platform = p.platformId.toString,
+                  externalId = p.externalId,
+                  name = p.name,
+                  url = p.url
+                )
+            }
 
-        Ok(response)
+          Ok(response)
       }
 
-
-
   }
-}

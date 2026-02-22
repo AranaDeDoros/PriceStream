@@ -1,13 +1,13 @@
 package org.aranadedoros.pricestream
 package repositories
 
-import domain.models.{Price, TrackedProduct}
+import domain.models.Price
 import repositories.interfaces.PriceRepository
 import cats.effect.IO
 import doobie.*
 import doobie.implicits.*
 
-class DoobiePriceRepository(xa: Transactor[IO]) extends PriceRepository {
+class DoobiePriceRepository(xa: Transactor[IO]) extends PriceRepository:
 
   override def findLatestPrice(productId: Long): IO[Option[Price]] =
     sql"""
@@ -31,5 +31,3 @@ class DoobiePriceRepository(xa: Transactor[IO]) extends PriceRepository {
       .run
       .transact(xa)
       .void
-}
-

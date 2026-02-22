@@ -10,13 +10,11 @@ import doobie.Transactor
 import doobie.implicits.*
 import doobie.postgres.implicits.*
 
-
 class DoobieTrackingRepository[F[_]: Async](
-                                             xa: Transactor[F]
-                                           ) extends TrackingRepository[F] {
-  
-  // Platform
+  xa: Transactor[F]
+) extends TrackingRepository[F]:
 
+  // Platform
   def findPlatformByName(name: String): F[Option[Platform]] =
     sql"""
       SELECT id, name
@@ -36,7 +34,6 @@ class DoobieTrackingRepository[F[_]: Async](
       .transact(xa)
 
   // Product
-
   def findProduct(platformId: Long, externalId: String): F[Option[TrackedProduct]] =
     sql"""
       SELECT id, platform_id, external_id, name, url
@@ -48,11 +45,11 @@ class DoobieTrackingRepository[F[_]: Async](
       .transact(xa)
 
   def createProduct(
-                     platformId: Long,
-                     externalId: String,
-                     name: Option[String],
-                     url: Option[String]
-                   ): F[TrackedProduct] =
+    platformId: Long,
+    externalId: String,
+    name: Option[String],
+    url: Option[String]
+  ): F[TrackedProduct] =
     sql"""
       INSERT INTO products (platform_id, external_id, name, url)
       VALUES ($platformId, $externalId, $name, $url)
@@ -62,7 +59,6 @@ class DoobieTrackingRepository[F[_]: Async](
       .transact(xa)
 
   // Price
-
   def insertPrice(productId: Long, price: BigDecimal): F[Unit] =
     sql"""
       INSERT INTO price_history (product_id, price)
@@ -101,5 +97,3 @@ class DoobieTrackingRepository[F[_]: Async](
       .query[TrackedProduct]
       .to[List]
       .transact(xa)
-
-}

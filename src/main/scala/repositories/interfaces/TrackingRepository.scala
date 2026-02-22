@@ -3,8 +3,7 @@ package repositories.interfaces
 
 import domain.models.*
 
-
-trait TrackingRepository[F[_]] {
+trait TrackingRepository[F[_]]:
 
   // Platform
   def findPlatformByName(name: String): F[Option[Platform]]
@@ -13,11 +12,11 @@ trait TrackingRepository[F[_]] {
   // Product
   def findProduct(platformId: Long, externalId: String): F[Option[TrackedProduct]]
   def createProduct(
-                     platformId: Long,
-                     externalId: String,
-                     name: Option[String],
-                     url: Option[String]
-                   ): F[TrackedProduct]
+    platformId: Long,
+    externalId: String,
+    name: Option[String],
+    url: Option[String]
+  ): F[TrackedProduct]
 
   // Price
   def insertPrice(productId: Long, price: BigDecimal): F[Unit]
@@ -27,5 +26,3 @@ trait TrackingRepository[F[_]] {
   def listProducts: F[List[TrackedProduct]]
 
   def listProductsByPlatform(platform: String): F[List[TrackedProduct]]
-
-}

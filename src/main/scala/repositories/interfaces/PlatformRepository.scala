@@ -1,10 +1,10 @@
 package org.aranadedoros.pricestream
 package repositories.interfaces
 
-import cats.effect.IO
-import org.aranadedoros.pricestream.domain.models.Platform
+import domain.models.Platform
 
-trait PlatformRepository {
+import cats.effect.IO
+
+trait PlatformRepository:
   def all: IO[Seq[Platform]]
   def ids: IO[Seq[Long]]
-}

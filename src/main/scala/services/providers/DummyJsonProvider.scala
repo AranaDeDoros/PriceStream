@@ -12,26 +12,28 @@ import org.http4s.client.*
 import org.http4s.implicits.uri
 
 class DummyJsonProvider(
-                         client: Client[IO],
-                         platform: Platform,
-                       ) extends JsonProvider(client, platform)
-                         with ProductProvider {
+  client: Client[IO],
+  platform: Platform
+) extends JsonProvider(client, platform)
+    with ProductProvider:
 
   override val baseUri = uri"https://dummyjson.com"
 
   override def fetchProducts(): IO[List[TrackedProduct]] =
     client.expect[DummyProductsResponse](
       Request[IO](GET, baseUri / "products")
-    ).map { response =>
-      response.products.map { dto =>
-        TrackedProduct(
-          id = 0L, // DB lo genera
-          platformId = platform.id,
-          externalId = dto.id.toString,
-          name = Some(dto.title),
-          url = Some(s"$baseUri/products/${dto.id}")
-        )
-      }
+    ).map {
+      response =>
+        response.products.map {
+          dto =>
+            TrackedProduct(
+              id = 0L, // DB lo genera
+              platformId = platform.id,
+              externalId = dto.id.toString,
+              name = Some(dto.title),
+              url = Some(s"$baseUri/products/${dto.id}")
+            )
+        }
     }
 
   override def fetchPrice(externalId: String): IO[Option[Price]] =
@@ -39,6 +41,5 @@ class DummyJsonProvider(
       Request[IO](GET, baseUri / "products" / externalId)
     ).map {
       case Some(dto) => Some(Price(dto.price))
-      case None => None
+      case None      => None
     }
-}

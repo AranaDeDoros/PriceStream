@@ -1,12 +1,13 @@
 package org.aranadedoros.pricestream
 package repositories
 
+import domain.models.{IngestionRun, IngestionStatus}
+import repositories.interfaces.LoggerRepository
+
 import cats.effect.IO
 import doobie.*
 import doobie.implicits.*
 import doobie.postgres.implicits.*
-import org.aranadedoros.pricestream.domain.models.{IngestionRun, IngestionStatus}
-import org.aranadedoros.pricestream.repositories.interfaces.LoggerRepository
 
 import java.time.Instant
 import java.util.UUID
@@ -16,7 +17,9 @@ class DoobieLoggerRepository(xa: Transactor[IO]) extends LoggerRepository:
   override def insert(run: IngestionRun): IO[Unit] =
     sql"""
       INSERT INTO ingestion_runs (id, started_at, finished_at, status)
-      VALUES (${run.id}, ${run.startedAt}, ${run.finishedAt}, ${IngestionStatus.toString(run.status)})
+      VALUES (${run.id}, ${run.startedAt}, ${run.finishedAt}, ${IngestionStatus.toString(
+      run.status
+    )})
     """
       .update
       .run

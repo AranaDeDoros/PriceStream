@@ -1,11 +1,11 @@
 package org.aranadedoros.pricestream
 package repositories.interfaces
 
-import cats.effect.IO
-import org.aranadedoros.pricestream.domain.models.TrackedProduct
+import domain.models.TrackedProduct
 
-trait ProductRepository {
+import cats.effect.IO
+
+trait ProductRepository:
   def findByExternalId(platformId: Long, externalId: String): IO[Option[TrackedProduct]]
-  def findLatest(n: Int) : IO[Seq[TrackedProduct]]
+  def findLatest(n: Int): IO[Seq[TrackedProduct]]
   def insert(product: TrackedProduct): IO[TrackedProduct]
-}

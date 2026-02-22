@@ -1,12 +1,10 @@
 package org.aranadedoros.pricestream
 package services.providers
 
-import cats.effect.IO
-import org.aranadedoros.pricestream.domain.models.{Price, TrackedProduct}
-import org.http4s.Uri
+import domain.models.{Price, TrackedProduct}
 
-trait ProductProvider {
+import cats.effect.IO
+
+trait ProductProvider:
   def fetchProducts(): IO[Seq[TrackedProduct]]
   def fetchPrice(externalId: String): IO[Option[Price]]
-}
-

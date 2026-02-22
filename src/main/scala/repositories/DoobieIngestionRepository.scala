@@ -1,16 +1,17 @@
 package org.aranadedoros.pricestream
 package repositories
 
+import domain.models.{IngestionRun, IngestionStatus}
+import repositories.interfaces.IngestRepository
+
 import cats.effect.IO
 import doobie.*
 import doobie.implicits.*
 import doobie.postgres.implicits.*
-import org.aranadedoros.pricestream.domain.models.{IngestionRun, IngestionStatus}
-import org.aranadedoros.pricestream.repositories.interfaces.IngestRepository
 
 import java.util.UUID
 
-class DoobieIngestionRepository(xa: Transactor[IO]) extends IngestRepository {
+class DoobieIngestionRepository(xa: Transactor[IO]) extends IngestRepository:
 
   override def all: IO[Seq[IngestionRun]] =
     sql"""
@@ -27,9 +28,9 @@ class DoobieIngestionRepository(xa: Transactor[IO]) extends IngestRepository {
       FROM ingestion_runs
       WHERE id = $id
     """
-    .query[IngestionRun]
-    .option
-    .transact(xa)
+      .query[IngestionRun]
+      .option
+      .transact(xa)
 
   override def findByStatus(status: IngestionStatus): IO[Seq[IngestionRun]] =
     sql"""
@@ -40,4 +41,3 @@ class DoobieIngestionRepository(xa: Transactor[IO]) extends IngestRepository {
       .query[IngestionRun]
       .to[Seq]
       .transact(xa)
-}

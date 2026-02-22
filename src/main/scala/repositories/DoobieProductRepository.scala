@@ -1,18 +1,19 @@
 package org.aranadedoros.pricestream
 package repositories
 
+import domain.models.TrackedProduct
+import repositories.interfaces.ProductRepository
+
 import cats.effect.IO
 import doobie.*
 import doobie.implicits.*
-import org.aranadedoros.pricestream.domain.models.TrackedProduct
-import org.aranadedoros.pricestream.repositories.interfaces.ProductRepository
 
-class DoobieProductRepository(xa: Transactor[IO]) extends ProductRepository {
+class DoobieProductRepository(xa: Transactor[IO]) extends ProductRepository:
 
   override def findByExternalId(
-                                 platformId: Long,
-                                 externalId: String
-                               ): IO[Option[TrackedProduct]] =
+    platformId: Long,
+    externalId: String
+  ): IO[Option[TrackedProduct]] =
     sql"""
       SELECT id, platform, external_id, name, url
       FROM products
@@ -33,10 +34,10 @@ class DoobieProductRepository(xa: Transactor[IO]) extends ProductRepository {
       .unique
       .transact(xa)
 
-  //GET  /products/latest
+  // GET  /products/latest
   override def findLatest(
-                                 n: Int
-                               ): IO[Seq[TrackedProduct]] =
+    n: Int
+  ): IO[Seq[TrackedProduct]] =
     sql"""
         SELECT id, platform, external_id, name, url
         FROM products
@@ -46,5 +47,3 @@ class DoobieProductRepository(xa: Transactor[IO]) extends ProductRepository {
       .query[TrackedProduct]
       .to[Seq]
       .transact(xa)
-}
-

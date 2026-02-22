@@ -6,7 +6,7 @@ import cats.effect.IO
 import doobie.*
 import doobie.implicits.*
 
-class DoobiePlatformRepository(xa: Transactor[IO]) extends PlatformRepository {
+class DoobiePlatformRepository(xa: Transactor[IO]) extends PlatformRepository:
 
   override def all: IO[Seq[Platform]] =
     sql"""
@@ -25,6 +25,3 @@ class DoobiePlatformRepository(xa: Transactor[IO]) extends PlatformRepository {
       .query[Long]
       .to[Seq]
       .transact(xa)
-
-}
-
