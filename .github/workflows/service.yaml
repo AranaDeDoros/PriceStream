@@ -12,16 +12,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - &checkout 
+        name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - &setup-java
+        name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
           cache: sbt
-
+          
+      - &setup-sbt
+        name: Set up sbt
+        uses: sbt/setup-sbt@v1
+        
       - name: Compile
         run: sbt ++3.3.1 compile
 
@@ -31,15 +37,8 @@ jobs:
     needs: build
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: sbt
-
+      - *checkout
+      - *setup-java
+      - *setup-sbt
       - name: Run tests
-        run: sbt ++3.3.1 test
+        run: sbt test
