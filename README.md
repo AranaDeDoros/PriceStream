@@ -12,8 +12,8 @@ The system combines:
 -   Concurrent provider processing
 -   Persistent ingestion run tracking
 -   Historical price tracking (WIP)
--   [Decoupled dashboard API that also works as API gateway (FastAPI) ](https://github.com/AranaDeDoros/PriceStreamDashboard)
-  - Dashboard frontend to visualize runs data (React).
+-   [Decoupled dashboard API and API gateway (FastAPI) ](https://github.com/AranaDeDoros/PriceStreamDashboard)
+  - [Dashboard frontend to visualize runs data (React)](https://github.com/AranaDeDoros/PriceStreamDashboardFrontend)
 
 ------------------------------------------------------------------------
 
