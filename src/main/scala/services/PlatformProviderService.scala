@@ -6,9 +6,9 @@ import org.aranadedoros.pricestream.domain.models.Platform
 import org.aranadedoros.pricestream.repositories.interfaces.PlatformRepository
 
 class PlatformProviderService(
-                             repo: PlatformRepository
-                             ) {
+  repo: PlatformRepository
+) {
 
-  def all : IO[Seq[Platform]] = repo.all
-  def ids  : IO[Seq[Long]] = repo.ids
+  def all: IO[Seq[Platform]] = repo.all
+  def ids: IO[Seq[Long]]     = repo.ids
 }

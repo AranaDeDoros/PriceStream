@@ -3,7 +3,6 @@ package repositories
 
 import domain.models.{IngestionRun, IngestionStatus}
 import repositories.interfaces.IngestRepository
-
 import cats.effect.IO
 import doobie.*
 import doobie.implicits.*
@@ -38,6 +37,16 @@ class DoobieIngestionRepository(xa: Transactor[IO]) extends IngestRepository:
          FROM ingestion_runs
          WHERE status = ${status.toString}
        """
+      .query[IngestionRun]
+      .to[Seq]
+      .transact(xa)
+
+  override def findRunsByPlatform(platform: String): IO[Seq[IngestionRun]] =
+    sql"""
+        SELECT id, started_at, finished_at, status
+        FROM ingestion_runs
+        WHERE name = ${platform}
+      """
       .query[IngestionRun]
       .to[Seq]
       .transact(xa)

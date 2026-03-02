@@ -11,3 +11,4 @@ trait IngestRepository:
   def all: IO[Seq[IngestionRun]]
   def findById(id: UUID): IO[Option[IngestionRun]]
   def findByStatus(status: IngestionStatus): IO[Seq[IngestionRun]]
+  def findRunsByPlatform(platform: String): IO[Seq[IngestionRun]]

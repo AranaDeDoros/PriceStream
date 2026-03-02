@@ -6,6 +6,9 @@ import org.aranadedoros.pricestream.domain.models.{IngestionRun, IngestionStatus
 import org.aranadedoros.pricestream.repositories.interfaces.IngestRepository
 import org.aranadedoros.pricestream.routes.ExternalAPIRoutes
 import org.aranadedoros.pricestream.services.ExternalAPIService
+import org.aranadedoros.pricestream.services.PlatformProviderService
+import org.aranadedoros.pricestream.domain.models.Platform
+import org.aranadedoros.pricestream.repositories.interfaces.PlatformRepository
 import org.http4s.Method.GET
 import org.http4s.{Request, Uri}
 import org.http4s.implicits.*
@@ -32,13 +35,29 @@ class ExternalAPIRoutesSpec extends CatsEffectSuite {
 
     override def findByStatus(status: IngestionStatus): IO[Seq[IngestionRun]] =
       IO.pure(Seq(ingestionRun).filter(_.status == status))
+
+    override def findRunsByPlatform(platform: String): IO[Seq[IngestionRun]] = IO.pure(Seq.empty)
   }
 
-  private val httpApp = ExternalAPIRoutes.routes(new ExternalAPIService(ingestRepo)).orNotFound
+  private val platformRepo = new PlatformRepository {
+    override def all: IO[Seq[Platform]] = IO.pure(Seq.empty)
+
+    override def ids: IO[Seq[Long]] = IO.pure(Seq.empty)
+  }
+
+  private val platformService =
+    new PlatformProviderService(platformRepo)
+
+  private val httpApp =
+    ExternalAPIRoutes
+      .routes(
+        new ExternalAPIService(ingestRepo),
+        platformService
+      )
+      .orNotFound
 
   test("GET /runs returns a list") {
     val request = Request[IO](method = GET, uri = uri"/runs")
-
     for {
       response <- httpApp.run(request)
       body     <- response.as[Json]
@@ -52,7 +71,6 @@ class ExternalAPIRoutesSpec extends CatsEffectSuite {
 
   test("GET /runs/{id} returns an existing run") {
     val request = Request[IO](method = GET, uri = Uri.unsafeFromString(s"/runs/$runId"))
-
     for {
       response <- httpApp.run(request)
       body     <- response.as[Json]
@@ -65,7 +83,6 @@ class ExternalAPIRoutesSpec extends CatsEffectSuite {
   test("GET /runs/{id} returns 404 for non-existent runs") {
     val missingId = UUID.fromString("22222222-2222-2222-2222-222222222222")
     val request   = Request[IO](method = GET, uri = Uri.unsafeFromString(s"/runs/$missingId"))
-
     httpApp.run(request).map {
       response =>
         assertEquals(response.status.code, 404)
@@ -74,7 +91,6 @@ class ExternalAPIRoutesSpec extends CatsEffectSuite {
 
   test("GET /status/{status} return a list of runs by state") {
     val request = Request[IO](method = GET, uri = uri"/status/Completed")
-
     for {
       response <- httpApp.run(request)
       body     <- response.as[Json]
@@ -89,7 +105,6 @@ class ExternalAPIRoutesSpec extends CatsEffectSuite {
 
   test("GET /status/{status} returns 404 when no runs by this status") {
     val request = Request[IO](method = GET, uri = uri"/status/Failed")
-
     httpApp.run(request).map {
       response =>
         assertEquals(response.status.code, 404)
