@@ -18,7 +18,7 @@ import scala.concurrent.duration.*
 object Main extends IOApp.Simple:
 
   given LoggerFactory[IO] = Slf4jFactory.create[IO]
-  private val config = ConfigFactory.load()
+  private val config      = ConfigFactory.load()
   private def transactor: Resource[IO, HikariTransactor[IO]] =
     for
       ce <- ExecutionContexts.fixedThreadPool[IO](32)
@@ -35,30 +35,31 @@ object Main extends IOApp.Simple:
     val logger = LoggerFactory[IO].getLogger
     (transactor, EmberClientBuilder.default[IO].withTimeout(30.seconds).build)
       .tupled
-      .use { (xa, client) =>
-        val program =
-          for {
-            platforms <- Resource.eval(PlatformModule.fetchAll(xa))
-            trackingSvc    <- Resource.eval(TrackingModule.make[IO](xa))
-            externalSvc <- Resource.eval(ExternalAPIModule.make(xa))
-            trackingRoutes = HttpModule.routes[IO](trackingSvc)
-            externalRoutes = ExternalAPIRoutes.routes(externalSvc)
+      .use {
+        (xa, client) =>
+          val program =
+            for {
+              platformSvc <- Resource.eval(PlatformModule.make(xa))
+              platforms   <- Resource.eval(platformSvc.all)
+              trackingSvc <- Resource.eval(TrackingModule.make[IO](xa))
+              externalSvc <- Resource.eval(ExternalAPIModule.make(xa))
+              trackingRoutes = HttpModule.routes[IO](trackingSvc)
+              externalRoutes = ExternalAPIRoutes.routes(externalSvc, platformSvc)
 
-            httpApp = Router(
-              "/tracking" -> trackingRoutes,
-              "/api" -> externalRoutes
-            ).orNotFound
+              httpApp = Router(
+                "/tracking" -> trackingRoutes,
+                "/api"      -> externalRoutes
+              ).orNotFound
 
-            server <- EmberServerBuilder
-              .default[IO]
-              .withHost(ipv4"0.0.0.0")
-              .withPort(port"8080")
-              .withHttpApp(httpApp)
-              .build
+              server <- EmberServerBuilder
+                .default[IO]
+                .withHost(ipv4"0.0.0.0")
+                .withPort(port"8080")
+                .withHttpApp(httpApp)
+                .build
 
-            ingest <- IngestModule.make(xa, client, platforms, logger)
-          } yield (server, ingest)
+              ingest <- IngestModule.make(xa, client, platforms, logger)
+            } yield (server, ingest)
 
-        program.useForever
+          program.useForever
       }
-
