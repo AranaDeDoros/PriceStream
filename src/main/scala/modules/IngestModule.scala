@@ -76,7 +76,7 @@ object IngestModule:
       id  <- IO(UUID.randomUUID())
       now <- IO.realTimeInstant
       _ <- loggerRepo.insert(
-        IngestionRun(id, now, None, IngestionStatus.Running)
+        IngestionRun(id, now, None, IngestionStatus.Running, None)
       )
 
       result <- ingestService.ingestOnce().attempt

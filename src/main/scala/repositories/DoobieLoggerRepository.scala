@@ -16,10 +16,14 @@ class DoobieLoggerRepository(xa: Transactor[IO]) extends LoggerRepository:
 
   override def insert(run: IngestionRun): IO[Unit] =
     sql"""
-      INSERT INTO ingestion_runs (id, started_at, finished_at, status , error)
-      VALUES (${run.id}, ${run.startedAt}, ${run.finishedAt}, ${IngestionStatus.toString(
-      run.status, ${run.error}
-    )})
+     INSERT INTO ingestion_runs (id, started_at, finished_at, status, error)
+    VALUES (
+      ${run.id},
+      ${run.startedAt},
+      ${run.finishedAt},
+      ${IngestionStatus.toString(run.status)},
+      ${run.error}
+    )
     """
       .update
       .run
@@ -53,18 +57,19 @@ class DoobieLoggerRepository(xa: Transactor[IO]) extends LoggerRepository:
 
   override def all: IO[Seq[IngestionRun]] =
     sql"""
-      SELECT id, started_at, finished_at, status
+      SELECT id, started_at, finished_at, status, error
       FROM ingestion_runs
       ORDER BY started_at DESC
     """
-      .query[(UUID, Instant, Option[Instant], String)]
+      .query[(UUID, Instant, Option[Instant], String, Option[String])]
       .map {
-        case (id, started, finished, statusStr) =>
+        case (id, started, finished, statusStr, error) =>
           IngestionRun(
             id,
             started,
             finished,
-            IngestionStatus.fromString(statusStr)
+            IngestionStatus.fromString(statusStr),
+            error
           )
       }
       .to[Seq]
