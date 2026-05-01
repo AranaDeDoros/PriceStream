@@ -17,7 +17,8 @@ object ExternalAPIRoutes:
 
   def routes(svc: ExternalAPIService, platformSvc: PlatformProviderService): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
-      case GET -> Root / "runs" =>
+      case GET -> Ro
+        ot / "runs" =>
         svc.allDTO.flatMap(
           runs => Ok(runs.asJson)
         )

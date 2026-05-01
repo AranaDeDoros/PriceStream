@@ -86,6 +86,6 @@ object IngestModule:
           loggerRepo.update(id, IngestionStatus.Completed)
 
         case Left(e) =>
-          loggerRepo.update(id, IngestionStatus.Failed) *>
+          loggerRepo.updateWithError(id, IngestionStatus.Failed, e.getMessage) *>
             logger.error(e)("Ingestion failed")
     } yield ()

@@ -34,7 +34,8 @@ case class IngestionRun(
   id: UUID,
   startedAt: Instant,
   finishedAt: Option[Instant],
-  status: IngestionStatus
+  status: IngestionStatus,
+  error: Option[String]
 )
 
 object IngestionRun:
@@ -44,7 +45,8 @@ case class IngestionRunDTO(
   id: UUID,
   startedAt: Instant,
   finishedAt: Option[Instant],
-  status: String
+  status: String,
+  error: Option[String]
 )
 
 object IngestionRunDTO:
@@ -53,6 +55,7 @@ object IngestionRunDTO:
       id = run.id,
       startedAt = run.startedAt,
       finishedAt = run.finishedAt,
-      status = run.status.toString
+      status = run.status.toString,
+      error= run.error
     )
   given Encoder[IngestionRunDTO] = deriveEncoder
