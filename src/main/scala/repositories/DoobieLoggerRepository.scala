@@ -70,19 +70,20 @@ class DoobieLoggerRepository(xa: Transactor[IO]) extends LoggerRepository:
 
   override def all: IO[Seq[IngestionRun]] =
     sql"""
-      SELECT id, started_at, finished_at, status, error
+      SELECT id, started_at, finished_at, status, error, products_processed
       FROM ingestion_runs
       ORDER BY started_at DESC
     """
-      .query[(UUID, Instant, Option[Instant], String, Option[String])]
+      .query[(UUID, Instant, Option[Instant], String, Option[String], Option[Int])]
       .map {
-        case (id, started, finished, statusStr, error) =>
+        case (id, started, finished, statusStr, error, count) =>
           IngestionRun(
             id,
             started,
             finished,
             IngestionStatus.fromString(statusStr),
-            error
+            error,
+            count.getOrElse(0)
           )
       }
       .to[Seq]

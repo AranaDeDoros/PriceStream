@@ -14,7 +14,7 @@ class DoobieIngestionRepository(xa: Transactor[IO]) extends IngestRepository:
 
   override def all: IO[Seq[IngestionRun]] =
     sql"""
-      SELECT id, started_at, finished_at, status
+      SELECT id, started_at, finished_at, status, error, products_processed
       FROM ingestion_runs
     """
       .query[IngestionRun]
@@ -23,7 +23,7 @@ class DoobieIngestionRepository(xa: Transactor[IO]) extends IngestRepository:
 
   override def findById(id: UUID): IO[Option[IngestionRun]] =
     sql"""
-      SELECT id, started_at, finished_at, status
+      SELECT id, started_at, finished_at, status, error, products_processed
       FROM ingestion_runs
       WHERE id = $id
     """
@@ -33,7 +33,7 @@ class DoobieIngestionRepository(xa: Transactor[IO]) extends IngestRepository:
 
   override def findByStatus(status: IngestionStatus): IO[Seq[IngestionRun]] =
     sql"""
-         SELECT id, started_at, finished_at, status
+         SELECT id, started_at, finished_at, status, error, products_processed
          FROM ingestion_runs
          WHERE status = ${status.toString}
        """
@@ -43,7 +43,7 @@ class DoobieIngestionRepository(xa: Transactor[IO]) extends IngestRepository:
 
   override def findRunsByPlatform(platform: String): IO[Seq[IngestionRun]] =
     sql"""
-        SELECT id, started_at, finished_at, status
+        SELECT id, started_at, finished_at, status, error, products_processed
         FROM ingestion_runs
         WHERE name = ${platform}
       """

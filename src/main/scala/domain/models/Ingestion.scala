@@ -35,7 +35,8 @@ case class IngestionRun(
   startedAt: Instant,
   finishedAt: Option[Instant],
   status: IngestionStatus,
-  error: Option[String]
+  error: Option[String],
+  products_processed: Int = 0
 )
 
 object IngestionRun:
@@ -46,7 +47,8 @@ case class IngestionRunDTO(
   startedAt: Instant,
   finishedAt: Option[Instant],
   status: String,
-  error: Option[String]
+  error: Option[String],
+  products_processed: Int = 0
 )
 
 object IngestionRunDTO:
@@ -56,6 +58,7 @@ object IngestionRunDTO:
       startedAt = run.startedAt,
       finishedAt = run.finishedAt,
       status = run.status.toString,
-      error= run.error
+      error= run.error,
+      products_processed =  run.products_processed
     )
   given Encoder[IngestionRunDTO] = deriveEncoder
