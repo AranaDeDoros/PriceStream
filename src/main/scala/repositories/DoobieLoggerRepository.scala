@@ -55,6 +55,19 @@ class DoobieLoggerRepository(xa: Transactor[IO]) extends LoggerRepository:
       .transact(xa)
       .void
 
+  override def updateWithSummary(id: UUID, status: IngestionStatus, count: Int): IO[Unit] =
+    sql"""
+      UPDATE ingestion_runs
+      SET finished_at = NOW(),
+          status = ${IngestionStatus.toString(status)},
+          products_processed = $count
+      WHERE id = $id
+    """
+      .update
+      .run
+      .transact(xa)
+      .void
+
   override def all: IO[Seq[IngestionRun]] =
     sql"""
       SELECT id, started_at, finished_at, status, error

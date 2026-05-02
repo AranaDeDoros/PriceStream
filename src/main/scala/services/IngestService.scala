@@ -14,14 +14,14 @@ class IngestService(
   priceRepo: PriceRepository
 ):
 
-  def ingestOnce(): IO[Unit] =
-    providers.parTraverse_(ingestFromProvider)
+  def ingestOnce(): IO[Int] =
+    providers.parTraverse(ingestFromProvider).map(_.sum)
 
-  private def ingestFromProvider(provider: ProductProvider): IO[Unit] =
+  private def ingestFromProvider(provider: ProductProvider): IO[Int] =
     for {
       products <- provider.fetchProducts()
-      _        <- products.traverse_(processProduct(provider, _))
-    } yield ()
+      count    <- products.traverse(processProduct(provider, _)).map(_.size)
+    } yield count
 
   private def processProduct(
     provider: ProductProvider,

@@ -24,7 +24,8 @@ class ExternalAPIRoutesSpec extends CatsEffectSuite {
     id = runId,
     startedAt = Instant.parse("2024-01-01T00:00:00Z"),
     finishedAt = Some(Instant.parse("2024-01-01T00:05:00Z")),
-    status = IngestionStatus.Completed
+    status = IngestionStatus.Completed,
+    None
   )
 
   private val ingestRepo = new IngestRepository {

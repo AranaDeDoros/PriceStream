@@ -82,8 +82,8 @@ object IngestModule:
       result <- ingestService.ingestOnce().attempt
 
       _ <- result match
-        case Right(_) =>
-          loggerRepo.update(id, IngestionStatus.Completed)
+        case Right(count) =>
+          loggerRepo.updateWithSummary(id, IngestionStatus.Completed, count)
 
         case Left(e) =>
           loggerRepo.updateWithError(id, IngestionStatus.Failed, e.getMessage) *>
