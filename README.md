@@ -17,6 +17,123 @@ The system combines:
 
 ------------------------------------------------------------------------
 
+## HTTP API
+
+The HTTP server listens on `http://localhost:8080`. Routes are mounted in
+two groups:
+
+- `/tracking` for recording prices and retrieving product history
+- `/api` for ingestion-run and platform data used by the dashboard
+
+All successful responses are JSON, except `POST /tracking/track`, which
+returns an empty response body.
+
+### Tracking endpoints
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/tracking/track` | Creates the platform and product if needed, then records a price. |
+| `GET` | `/tracking/history/{platform}/{externalId}` | Returns the recorded price history for one product. |
+| `GET` | `/tracking/products` | Lists all tracked products. |
+| `GET` | `/tracking/products?platform={platform}` | Lists products for a platform. The filter is case-insensitive. |
+
+Record a price with a positive `price`. `name` and `url` are optional:
+
+```bash
+curl -i -X POST http://localhost:8080/tracking/track \
+  -H "Content-Type: application/json" \
+  -d '{
+    "platform": "dummyjson",
+    "externalId": "1",
+    "price": 199.99,
+    "name": "Example product",
+    "url": "https://example.com/products/1"
+  }'
+```
+
+This returns `201 Created`. A non-positive price returns `400 Bad Request`;
+database failures return `500 Internal Server Error`.
+
+Retrieve a product's history:
+
+```bash
+curl http://localhost:8080/tracking/history/dummyjson/1
+```
+
+Example response:
+
+```json
+[
+  {
+    "price": 199.99,
+    "recordedAt": "2026-09-27T12:00:00Z"
+  }
+]
+```
+
+An unknown platform or product returns `404 Not Found`. Product-list responses
+have this shape (the `platform` value is the platform's internal ID):
+
+```json
+[
+  {
+    "platform": "1",
+    "externalId": "1",
+    "name": "Example product",
+    "url": "https://example.com/products/1"
+  }
+]
+```
+
+### Ingestion and platform endpoints
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/api/runs` | Lists all ingestion runs. |
+| `GET` | `/api/runs/{id}` | Returns an ingestion run by UUID. |
+| `GET` | `/api/runs/platform/{platform}` | Lists ingestion runs for a platform. |
+| `GET` | `/api/status/{status}` | Lists ingestion runs with a status. Valid values are `Running`, `Completed`, and `Failed`. |
+| `GET` | `/api/platforms` | Lists configured platforms. |
+
+For example:
+
+```bash
+curl http://localhost:8080/api/runs
+curl http://localhost:8080/api/runs/11111111-1111-1111-1111-111111111111
+curl http://localhost:8080/api/runs/platform/dummyjson
+curl http://localhost:8080/api/status/Completed
+curl http://localhost:8080/api/platforms
+```
+
+An ingestion-run response has the following shape. `finishedAt` and `error`
+are `null` while applicable data is unavailable:
+
+```json
+{
+  "id": "11111111-1111-1111-1111-111111111111",
+  "startedAt": "2026-09-27T12:00:00Z",
+  "finishedAt": "2026-09-27T12:01:00Z",
+  "status": "Completed",
+  "error": null,
+  "products_processed": 42
+}
+```
+
+`/api/platforms` returns objects such as:
+
+```json
+{
+  "id": 1,
+  "name": "dummyjson",
+  "baseUrl": "https://dummyjson.com"
+}
+```
+
+The list endpoints return arrays of these objects. A missing run, or a
+platform/status query that finds no runs or platforms, returns `404 Not Found`.
+
+------------------------------------------------------------------------
+
 ## Architecture
 
 ### Core Stack
