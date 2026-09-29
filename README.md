@@ -39,7 +39,7 @@ returns an empty response body.
 | `GET` | `/tracking/products` | Lists all tracked products. |
 | `GET` | `/tracking/products?platform={platform}` | Lists products for a platform. The filter is case-insensitive. |
 
-Record a price with a positive `price`. `name` and `url` are optional:
+Track a price.
 
 ```bash
 curl -i -X POST http://localhost:8080/tracking/track \
