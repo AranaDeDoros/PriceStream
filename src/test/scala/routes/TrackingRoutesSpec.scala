@@ -19,7 +19,7 @@ import java.time.Instant
 class TrackingRoutesSpec extends CatsEffectSuite {
 
   private class StubTrackingService(
-    trackPriceResult: Either[TrackingError, Unit],
+    trackPriceResult: Either[TrackingError, TrackPriceResponse],
     historyResult: Either[TrackingError, List[PriceUpdate]],
     productsResult: List[TrackedProduct],
     observedPlatform: Ref[IO, Option[Option[String]]]
@@ -28,10 +28,7 @@ class TrackingRoutesSpec extends CatsEffectSuite {
     override def trackPrice(
       platform: String,
       externalId: String,
-      price: BigDecimal,
-      name: Option[String],
-      url: Option[String]
-    ): IO[Either[TrackingError, Unit]] = IO.pure(trackPriceResult)
+    ): IO[Either[TrackingError, TrackPriceResponse]] = IO.pure(trackPriceResult)
 
     override def getHistory(
       platform: String,
@@ -42,41 +39,42 @@ class TrackingRoutesSpec extends CatsEffectSuite {
       observedPlatform.set(Some(platform)) *> IO.pure(productsResult)
   }
 
-  test("POST /track returns 201 when finding a tracked run") {
-    for {
-      observed <- Ref.of[IO, Option[Option[String]]](None)
-      service = new StubTrackingService(
-        trackPriceResult = Right(()),
-        historyResult = Right(Nil),
-        productsResult = Nil,
-        observedPlatform = observed
-      )
-      request = Request[IO](POST, uri"/track").withEntity(
-        TrackPriceRequest("amazon", "SKU-1", BigDecimal("199.99"), Some("Kindle"), Some("https://example.com"))
-      )
-      response <- new TrackingRoutes[IO](service).httpRoutes.orNotFound.run(request)
-    } yield assertEquals(response.status.code, 201)
-  }
+test("POST /track returns 201 with the tracking response") {
+  val trackedAt = Instant.parse("2024-01-03T10:00:00Z")
 
-  test("POST /track 400 for invalid prices") {
-    for {
-      observed <- Ref.of[IO, Option[Option[String]]](None)
-      service = new StubTrackingService(
-        trackPriceResult = Left(TrackingError.InvalidPrice(BigDecimal("-1"))),
-        historyResult = Right(Nil),
-        productsResult = Nil,
-        observedPlatform = observed
-      )
-      request = Request[IO](POST, uri"/track").withEntity(
-        TrackPriceRequest("amazon", "SKU-1", BigDecimal("-1"), None, None)
-      )
-      response <- new TrackingRoutes[IO](service).httpRoutes.orNotFound.run(request)
-      body     <- response.as[String]
-    } yield {
-      assertEquals(response.status.code, 400)
-      assert(body.contains("Invalid price"))
-    }
+  for {
+    observed <- Ref.of[IO, Option[Option[String]]](None)
+
+    service = new StubTrackingService(
+      trackPriceResult = Right(
+        TrackPriceResponse(
+          status = "Tracking",
+          trackedAt = trackedAt
+        )
+      ),
+      historyResult = Right(Nil),
+      productsResult = Nil,
+      observedPlatform = observed
+    )
+
+    request = Request[IO](POST, uri"/track").withEntity(
+      TrackPriceRequest("amazon", "SKU-1")
+    )
+
+    response <- new TrackingRoutes[IO](service)
+      .httpRoutes
+      .orNotFound
+      .run(request)
+
+    body <- response.as[TrackPriceResponse]
+
+  } yield {
+    assertEquals(response.status.code, 201)
+    assertEquals(body.status, "Tracking")
+    assertEquals(body.createdAt, createdAt)
   }
+}
+
 
   test("GET /history/{platform}/{externalId} returns a history") {
     val recordedAt = Instant.parse("2024-01-03T10:00:00Z")

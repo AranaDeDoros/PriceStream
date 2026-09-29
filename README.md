@@ -28,6 +28,8 @@ two groups:
 All successful responses are JSON, except `POST /tracking/track`, which
 returns an empty response body.
 
+---
+
 ### Tracking endpoints
 
 | Method | Path | Description |
@@ -45,14 +47,12 @@ curl -i -X POST http://localhost:8080/tracking/track \
   -d '{
     "platform": "dummyjson",
     "externalId": "1",
-    "price": 199.99,
-    "name": "Example product",
-    "url": "https://example.com/products/1"
   }'
 ```
 
-This returns `201 Created`. A non-positive price returns `400 Bad Request`;
-database failures return `500 Internal Server Error`.
+This returns a TrackPriceResponse with `201 Created` as status. 
+
+---
 
 Retrieve a product's history:
 
@@ -84,6 +84,7 @@ have this shape (the `platform` value is the platform's internal ID):
   }
 ]
 ```
+---
 
 ### Ingestion and platform endpoints
 
