@@ -13,6 +13,14 @@ case class TrackingParams(
   externalId: String,
 )
 
+object TrackingStatuses:
+
+  def fromString(value: String): Either[String, TrackingStatuses] =
+    value match
+      case "Tracking" => Right(Tracking)
+      case "Stopped"  => Right(Stopped)
+      case other      => Left(s"Unknown tracking status: $other")
+
 def trackingUrl(base: String, params: TrackingParams): String =
   val values = List(
     "plat"   -> params.platform,

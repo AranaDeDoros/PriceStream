@@ -6,7 +6,6 @@ sealed trait TrackingError extends Product with Serializable
 object TrackingError:
 
   final case class ProductNotFound(
-    platform: String,
     externalId: String
   ) extends TrackingError
 

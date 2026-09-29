@@ -27,8 +27,11 @@ class TrackingRoutes[F[_]: Async](
       case TrackingError.InvalidPrice(p) =>
         BadRequest(s"Invalid price: $p")
 
-      case TrackingError.ProductNotFound(platform, id) =>
-        NotFound(s"Product $id on platform $platform not found")
+      case TrackingError.ProductNotFound(id) =>
+        NotFound(s"Product $id not found")
+
+      case TrackingError.PlatformNotFound(name) =>
+        NotFound(s"Platform $name not found")
 
       case TrackingError.PersistenceError(msg) =>
         InternalServerError(s"Persistence error: $msg")

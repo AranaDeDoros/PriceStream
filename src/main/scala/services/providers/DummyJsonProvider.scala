@@ -27,11 +27,12 @@ class DummyJsonProvider(
         response.products.map {
           dto =>
             TrackedProduct(
-              id = 0L, // DB lo genera
+              id = 0L, 
               platformId = platform.id,
               externalId = dto.id.toString,
               name = Some(dto.title),
-              url = Some(s"$baseUri/products/${dto.id}")
+              url = Some(s"$baseUri/products/${dto.id}"),
+              price = dto.price
             )
         }
     }

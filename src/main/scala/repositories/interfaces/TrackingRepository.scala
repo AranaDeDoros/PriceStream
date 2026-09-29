@@ -3,6 +3,8 @@ package repositories.interfaces
 
 import domain.models.*
 
+import org.aranadedoros.pricestream.domain.dto.TrackPriceResponse
+
 trait TrackingRepository[F[_]]:
 
   // Platform
@@ -26,3 +28,5 @@ trait TrackingRepository[F[_]]:
   def listProducts: F[List[TrackedProduct]]
 
   def listProductsByPlatform(platform: String): F[List[TrackedProduct]]
+
+  def insertTrackingRequest(platform: Platform, product: TrackedProduct) : F[TrackPriceResponse]

@@ -1,8 +1,8 @@
 package org.aranadedoros.pricestream
 package services
 
-import domain.errors.{TrackingError}
-import domain.dto.TrackPriceRequest
+import domain.errors.TrackingError
+import domain.dto.{TrackPriceRequest, TrackPriceResponse}
 import domain.models.{Platform, PriceUpdate, TrackedProduct}
 import repositories.interfaces.TrackingRepository
 import services.interfaces.TrackingService
@@ -35,7 +35,7 @@ class LiveTrackingService[F[_]: Sync](
 
   private def getPlatform(name: String) : F[Either[TrackingError,Platform]] =
     repo.findPlatformByName(name).flatMap {
-      case Some(p) => p.pure[F]
+      case Some(p) =>  p.asRight[TrackingError].pure[F]
       case None    => TrackingError.PlatformNotFound(name).asLeft.pure[F]
     }
 
@@ -44,8 +44,8 @@ class LiveTrackingService[F[_]: Sync](
     externalId: String,
   ):  F[Either[TrackingError,TrackedProduct]] =
     repo.findProduct(platformId, externalId).flatMap {
-      case Some(p) => p.pure[F]
-       case None    =>  TrackingError.ProductNotFound(platform, externalId)
+      case Some(p) =>  p.asRight[TrackingError].pure[F]
+       case None    =>  TrackingError.ProductNotFound(externalId)
           .asLeft
           .pure[F]
     }  
@@ -74,14 +74,14 @@ class LiveTrackingService[F[_]: Sync](
   ): F[Either[TrackingError, List[PriceUpdate]]] =
     repo.findPlatformByName(platform).flatMap {
       case None =>
-        TrackingError.ProductNotFound(platform, externalId)
+        TrackingError.PlatformNotFound(platform)
           .asLeft[List[PriceUpdate]]
           .pure[F]
 
       case Some(pl) =>
         repo.findProduct(pl.id, externalId).flatMap {
           case None =>
-            TrackingError.ProductNotFound(platform, externalId)
+            TrackingError.ProductNotFound(externalId)
               .asLeft[List[PriceUpdate]]
               .pure[F]
 

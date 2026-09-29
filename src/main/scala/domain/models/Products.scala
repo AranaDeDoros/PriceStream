@@ -8,7 +8,8 @@ case class TrackedProduct(
   platformId: Long,
   externalId: String,
   name: Option[String],
-  url: Option[String]
+  url: Option[String],
+  price: BigDecimal
 )
 
 case class PriceUpdate(

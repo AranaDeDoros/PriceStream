@@ -6,17 +6,25 @@ import domain.models.{Platform, PriceUpdate, TrackedProduct}
 import domain.dto.TrackPriceResponse
 import domain.models.TrackingStatuses
 import repositories.interfaces.TrackingRepository
+
 import cats.effect.Async
 import cats.syntax.all.*
 import doobie.Transactor
 import doobie.implicits.*
 import doobie.postgres.implicits.*
+import doobie.util.Get
+
 import java.time.Instant
 
 class DoobieTrackingRepository[F[_]: Async](
   xa: Transactor[F]
 ) extends TrackingRepository[F]:
 
+  given Get[TrackingStatuses] =
+    Get[String].temap(
+      TrackingStatuses.fromString
+    )
+    
   // Platform
   def findPlatformByName(name: String): F[Option[Platform]] =
     sql"""
@@ -62,7 +70,7 @@ class DoobieTrackingRepository[F[_]: Async](
       .transact(xa)
 
   // Price
-  def insertPrice(productId: Long, price: BigDecimal): F[Unit] =
+  override def insertPrice(productId: Long, price: BigDecimal): F[Unit] =
     sql"""
       INSERT INTO price_history (product_id, price)
       VALUES ($productId, $price)
@@ -71,7 +79,7 @@ class DoobieTrackingRepository[F[_]: Async](
       .transact(xa)
       .void
 
-  def getPriceHistory(productId: Long): F[List[PriceUpdate]] =
+  override def getPriceHistory(productId: Long): F[List[PriceUpdate]] =
     sql"""
       SELECT price, recorded_at
       FROM price_history
@@ -102,7 +110,7 @@ class DoobieTrackingRepository[F[_]: Async](
       .transact(xa)
 
 
-  def insertTrackingRequest(platform: Platform, product: TrackedProduct) : TrackPriceResponse =
+  override def insertTrackingRequest(platform: Platform, product: TrackedProduct) : F[TrackPriceResponse] =
 
     val (platform_id, tracked_product_id, tracked_product_price) = 
         (platform.id, product.id, product.price)
@@ -111,7 +119,7 @@ class DoobieTrackingRepository[F[_]: Async](
 
     sql"""
       INSERT INTO tracking_requests (tracked_product_id, tracked_product_price, platform_id, status, tracked_at)
-      VALUES ($tracked_product_id, $tracked_product_price, $platform_id, status, trackedAt)
+      VALUES ($tracked_product_id, $tracked_product_price, $platform_id, $status, $trackedAt)
       RETURNING status, tracked_at
     """.query[TrackPriceResponse]
       .unique
