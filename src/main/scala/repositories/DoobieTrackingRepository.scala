@@ -3,12 +3,15 @@ package repositories
 
 import domain.models
 import domain.models.{Platform, PriceUpdate, TrackedProduct}
+import domain.dto.TrackPriceResponse
+import domain.models.TrackingStatuses
 import repositories.interfaces.TrackingRepository
 import cats.effect.Async
 import cats.syntax.all.*
 import doobie.Transactor
 import doobie.implicits.*
 import doobie.postgres.implicits.*
+import java.time.Instant
 
 class DoobieTrackingRepository[F[_]: Async](
   xa: Transactor[F]
@@ -96,4 +99,20 @@ class DoobieTrackingRepository[F[_]: Async](
     """
       .query[TrackedProduct]
       .to[List]
+      .transact(xa)
+
+
+  def insertTrackingRequest(platformId: Platform, product: TrackedProduct) : TrackPriceResponse =
+
+    val (platform_id, tracked_product_id, tracked_product_price) = 
+        (platform.id, product.id, product.price)
+    val status = TrackingStatuses.Tracking.toString
+    val trackedAt = Instant.now()
+
+    sql"""
+      INSERT INTO tracking_requests (tracked_product_id, tracked_product_price, platform_id, status, tracked_at)
+      VALUES ($tracked_product_id, $tracked_product_price, $platform_id, status, trackedAt)
+      RETURNING status, tracked_at
+    """.query[TrackPriceResponse]
+      .unique
       .transact(xa)

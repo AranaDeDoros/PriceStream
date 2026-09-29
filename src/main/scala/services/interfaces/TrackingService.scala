@@ -1,17 +1,15 @@
 package org.aranadedoros.pricestream
 package services.interfaces
 
+import domain.dto.TrackPriceResponse
+import domain.dto.TrackPriceRequest
 import domain.errors.TrackingError
 import domain.models.{PriceUpdate, TrackedProduct}
 
 trait TrackingService[F[_]]:
   def trackPrice(
-    platform: String,
-    externalId: String,
-    price: BigDecimal,
-    name: Option[String],
-    url: Option[String]
-  ): F[Either[TrackingError, Unit]]
+    request: TrackPriceRequest,
+  ): F[Either[TrackingError, TrackPriceResponse]]
 
   def getHistory(
     platform: String,

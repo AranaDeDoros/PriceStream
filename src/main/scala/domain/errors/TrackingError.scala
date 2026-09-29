@@ -10,6 +10,10 @@ object TrackingError:
     externalId: String
   ) extends TrackingError
 
+  final case class PlatformNotFound(
+    platform: String,
+  ) extends TrackingError
+
   final case class InvalidPrice(
     value: BigDecimal
   ) extends TrackingError

@@ -1,6 +1,6 @@
 package org.aranadedoros.pricestream
 package domain.dto
-
+import domain.models.TrackingStatuses
 import io.circe.Codec
 import java.time.Instant
 
@@ -8,9 +8,12 @@ import java.time.Instant
 final case class TrackPriceRequest(
   platform: String,
   externalId: String,
-  price: BigDecimal,
-  name: Option[String],
-  url: Option[String]
+) derives Codec.AsObject
+
+// by default start as tracking
+final case class TrackPriceResponse(
+  status : TrackingStatuses = TrackingStatuses.Tracking
+  trackedAt : Instant
 ) derives Codec.AsObject
 
 final case class PriceUpdateResponse(

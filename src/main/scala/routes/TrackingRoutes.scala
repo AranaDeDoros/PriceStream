@@ -19,6 +19,7 @@ class TrackingRoutes[F[_]: Async](
 ) extends Http4sDsl[F]:
 
   given EntityDecoder[F, TrackPriceRequest]         = jsonOf
+  given EntityDecoder[F, TrackPriceResponse]         = jsonOf
   given EntityEncoder[F, List[PriceUpdateResponse]] = jsonEncoderOf
 
   private def mapError(error: TrackingError): F[Response[F]] =
@@ -43,16 +44,9 @@ class TrackingRoutes[F[_]: Async](
       for {
         body <- req.as[TrackPriceRequest]
 
-        result <- service.trackPrice(
-          body.platform,
-          body.externalId,
-          body.price,
-          body.name,
-          body.url
-        )
-
+        result   <- service.trackPrice(body)
         response <- result match {
-          case Right(_)  => Created()
+          case Right(resp) => Created(resp)
           case Left(err) => mapError(err)
         }
 
