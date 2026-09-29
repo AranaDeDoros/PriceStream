@@ -6,8 +6,7 @@ import java.nio.charset.StandardCharsets
 
 
 enum TrackingStatuses:
-    Tracking
-    Stopped
+    case Tracking, Stopped
     
 case class TrackingParams(
   platform: String,

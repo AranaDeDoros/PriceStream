@@ -102,7 +102,7 @@ class DoobieTrackingRepository[F[_]: Async](
       .transact(xa)
 
 
-  def insertTrackingRequest(platformId: Platform, product: TrackedProduct) : TrackPriceResponse =
+  def insertTrackingRequest(platform: Platform, product: TrackedProduct) : TrackPriceResponse =
 
     val (platform_id, tracked_product_id, tracked_product_price) = 
         (platform.id, product.id, product.price)

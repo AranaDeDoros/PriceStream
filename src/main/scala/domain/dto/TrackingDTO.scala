@@ -12,7 +12,7 @@ final case class TrackPriceRequest(
 
 // by default start as tracking
 final case class TrackPriceResponse(
-  status : TrackingStatuses = TrackingStatuses.Tracking
+  status : TrackingStatuses = TrackingStatuses.Tracking,
   trackedAt : Instant
 ) derives Codec.AsObject
 
