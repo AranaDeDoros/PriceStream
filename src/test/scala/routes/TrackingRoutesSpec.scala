@@ -5,7 +5,7 @@ import munit.CatsEffectSuite
 
 import org.aranadedoros.pricestream.domain.dto.*
 import org.aranadedoros.pricestream.domain.errors.TrackingError
-import org.aranadedoros.pricestream.domain.models.{PriceUpdate, TrackedProduct}
+import org.aranadedoros.pricestream.domain.models.{PriceUpdate, TrackedProduct, TrackingStatuses}
 import org.aranadedoros.pricestream.routes.TrackingRoutes
 import org.aranadedoros.pricestream.services.interfaces.TrackingService
 
@@ -26,8 +26,7 @@ class TrackingRoutesSpec extends CatsEffectSuite {
   ) extends TrackingService[IO] {
 
     override def trackPrice(
-      platform: String,
-      externalId: String,
+      request: TrackPriceRequest
     ): IO[Either[TrackingError, TrackPriceResponse]] = IO.pure(trackPriceResult)
 
     override def getHistory(
@@ -39,41 +38,41 @@ class TrackingRoutesSpec extends CatsEffectSuite {
       observedPlatform.set(Some(platform)) *> IO.pure(productsResult)
   }
 
-test("POST /track returns 201 with the tracking response") {
-  val trackedAt = Instant.parse("2024-01-03T10:00:00Z")
+  test("POST /track returns 201 with the tracking response") {
+    val trackedAt = Instant.parse("2024-01-03T10:00:00Z")
 
-  for {
-    observed <- Ref.of[IO, Option[Option[String]]](None)
+    for {
+      observed <- Ref.of[IO, Option[Option[String]]](None)
 
-    service = new StubTrackingService(
-      trackPriceResult = Right(
-        TrackPriceResponse(
-          status = "Tracking",
-          trackedAt = trackedAt
-        )
-      ),
-      historyResult = Right(Nil),
-      productsResult = Nil,
-      observedPlatform = observed
-    )
+      service = new StubTrackingService(
+        trackPriceResult = Right(
+          TrackPriceResponse(
+            status = TrackingStatuses.Tracking,
+            trackedAt = trackedAt
+          )
+        ),
+        historyResult = Right(Nil),
+        productsResult = Nil,
+        observedPlatform = observed
+      )
 
-    request = Request[IO](POST, uri"/track").withEntity(
-      TrackPriceRequest("amazon", "SKU-1")
-    )
+      request = Request[IO](POST, uri"/track").withEntity(
+        TrackPriceRequest("amazon", "SKU-1")
+      )
 
-    response <- new TrackingRoutes[IO](service)
-      .httpRoutes
-      .orNotFound
-      .run(request)
+      response <- new TrackingRoutes[IO](service)
+        .httpRoutes
+        .orNotFound
+        .run(request)
 
-    body <- response.as[TrackPriceResponse]
+      body <- response.as[TrackPriceResponse]
 
-  } yield {
-    assertEquals(response.status.code, 201)
-    assertEquals(body.status, "Tracking")
-    assertEquals(body.createdAt, createdAt)
+    } yield {
+      assertEquals(response.status.code, 201)
+      assertEquals(body.status, TrackingStatuses.Tracking)
+      assertEquals(body.trackedAt, trackedAt)
+    }
   }
-}
 
 
   test("GET /history/{platform}/{externalId} returns a history") {
@@ -82,7 +81,7 @@ test("POST /track returns 201 with the tracking response") {
     for {
       observed <- Ref.of[IO, Option[Option[String]]](None)
       service = new StubTrackingService(
-        trackPriceResult = Right(()),
+        trackPriceResult = Right(TrackPriceResponse(trackedAt = recordedAt)),
         historyResult = Right(List(PriceUpdate(BigDecimal("149.50"), recordedAt))),
         productsResult = Nil,
         observedPlatform = observed
@@ -102,8 +101,8 @@ test("POST /track returns 201 with the tracking response") {
     for {
       observed <- Ref.of[IO, Option[Option[String]]](None)
       service = new StubTrackingService(
-        trackPriceResult = Right(()),
-        historyResult = Left(TrackingError.ProductNotFound("amazon", "SKU-404")),
+        trackPriceResult = Right(TrackPriceResponse(trackedAt = Instant.EPOCH)),
+        historyResult = Left(TrackingError.ProductNotFound("SKU-404")),
         productsResult = Nil,
         observedPlatform = observed
       )
@@ -116,9 +115,9 @@ test("POST /track returns 201 with the tracking response") {
     for {
       observed <- Ref.of[IO, Option[Option[String]]](None)
       service = new StubTrackingService(
-        trackPriceResult = Right(()),
+        trackPriceResult = Right(TrackPriceResponse(trackedAt = Instant.EPOCH)),
         historyResult = Right(Nil),
-        productsResult = List(TrackedProduct(1L, 5L, "SKU-1", Some("Kindle"), Some("https://example.com"))),
+        productsResult = List(TrackedProduct(1L, 5L, "SKU-1", Some("Kindle"), Some("https://example.com"), BigDecimal("149.50"))),
         observedPlatform = observed
       )
       request = Request[IO](GET, uri"/products?platform=AMAZON")

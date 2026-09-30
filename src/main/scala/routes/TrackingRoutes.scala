@@ -42,7 +42,7 @@ class TrackingRoutes[F[_]: Async](
 
   val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F] {
 
-    // POST /api/track
+    // POST /tracking/track
     case req @ POST -> Root / "track" =>
       for {
         body <- req.as[TrackPriceRequest]
