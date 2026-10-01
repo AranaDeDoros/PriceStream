@@ -6,6 +6,7 @@ val DoobieVersion     = "1.0.0-RC4"
 val CirceVersion      = "0.14.6"
 val MunitVersion = "1.0.0-M11"
 val Fs2Version = "3.12.2"
+val FlywayVersion = "13.8.0"
 
 enablePlugins(JavaAppPackaging)
 enablePlugins(DockerPlugin)
@@ -40,6 +41,12 @@ lazy val root = project
 
       // PostgreSQL JDBC driver
       "org.postgresql" % "postgresql" % "42.7.3",
+
+      // ========================
+      // Database migrations
+      // ========================
+      "org.flywaydb" % "flyway-core" % FlywayVersion,
+      "org.flywaydb" % "flyway-database-postgresql" % FlywayVersion,
 
       // ========================
       // Circe

@@ -8,6 +8,7 @@ import cats.effect.{IO, IOApp, Resource}
 import cats.syntax.all.*
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
+import org.flywaydb.core.Flyway
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
@@ -19,6 +20,24 @@ object Main extends IOApp.Simple:
 
   given LoggerFactory[IO] = Slf4jFactory.create[IO]
   private val config      = ConfigFactory.load()
+  private def migrate: IO[Unit] =
+    IO.blocking {
+      Flyway
+        .configure()
+        .dataSource(
+          config.getString("app.db.url"),
+          config.getString("app.db.user"),
+          config.getString("app.db.passw")
+        )
+        .schemas("public")
+        .defaultSchema("public")
+        .baselineOnMigrate(config.getBoolean("app.db.flyway.baseline-on-migrate"))
+        .baselineVersion("1")
+        .load()
+        .migrate()
+      ()
+    }
+
   private def transactor: Resource[IO, HikariTransactor[IO]] =
     for
       ce <- ExecutionContexts.fixedThreadPool[IO](32)
@@ -33,10 +52,10 @@ object Main extends IOApp.Simple:
 
   override def run: IO[Unit] =
     val logger = LoggerFactory[IO].getLogger
-    (transactor, EmberClientBuilder.default[IO].withTimeout(30.seconds).build)
+    (Resource.eval(migrate), transactor, EmberClientBuilder.default[IO].withTimeout(30.seconds).build)
       .tupled
       .use {
-        (xa, client) =>
+        (_, xa, client) =>
           val program =
             for {
               platformSvc <- Resource.eval(PlatformModule.make(xa))

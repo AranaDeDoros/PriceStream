@@ -5,6 +5,18 @@
 PriceStream is WIP a modular Scala backend service for concurrent price ingestion and historical price tracking
 across multiple platforms. It exposes operational endpoints for the ingestion runs and metrics dashboard visualization.
 
+## Database migrations
+
+Flyway runs when the service starts. `B1__initial_schema.sql` is the baseline
+matching the existing PostgreSQL schema. On the first run against an existing
+non-empty `public` schema, Flyway records version 1 in `flyway_schema_history`
+without executing the baseline. On a new empty database, it applies the
+baseline to create the schema. Add future changes as `V2__description.sql`,
+`V3__description.sql`, and so on.
+
+The migration creates the `pgcrypto` extension; the configured database user
+must be permitted to create that extension on a new database.
+
 The system combines:
 
 -   REST API for tracking and querying data
