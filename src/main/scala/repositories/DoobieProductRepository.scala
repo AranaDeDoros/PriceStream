@@ -15,7 +15,7 @@ class DoobieProductRepository(xa: Transactor[IO]) extends ProductRepository:
     externalId: String
   ): IO[Option[TrackedProduct]] =
     sql"""
-      SELECT id, platform, external_id, name, url
+      SELECT id, platform, external_id, name, url, price
       FROM products
       WHERE platform = $platformId
       AND external_id = $externalId
@@ -26,9 +26,9 @@ class DoobieProductRepository(xa: Transactor[IO]) extends ProductRepository:
 
   override def insert(product: TrackedProduct): IO[TrackedProduct] =
     sql"""
-      INSERT INTO products (platform, external_id, name, url)
-      VALUES (${product.platformId}, ${product.externalId}, ${product.name}, ${product.url})
-      RETURNING id, platform, external_id, name, url
+      INSERT INTO products (platform, external_id, name, url, price)
+      VALUES (${product.platformId}, ${product.externalId}, ${product.name}, ${product.url}, ${product.price})
+      RETURNING id, platform, external_id, name, url, price
     """
       .query[TrackedProduct]
       .unique
@@ -39,7 +39,7 @@ class DoobieProductRepository(xa: Transactor[IO]) extends ProductRepository:
     n: Int
   ): IO[Seq[TrackedProduct]] =
     sql"""
-        SELECT id, platform, external_id, name, url
+        SELECT id, platform, external_id, name, url, price
         FROM products
         ORDER BY id DESC
         LIMIT $n
