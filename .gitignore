@@ -5,5 +5,4 @@
 target/
 *.ps1
 *.sql
-!db_schema.sql
 !src/main/resources/db/migration/*.sql
