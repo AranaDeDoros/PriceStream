@@ -54,9 +54,9 @@ class TrackingRoutes[F[_]: Async](
 
       } yield response
 
-    // GET /tracking/track/{tracking_url}
+    // GET /tracking/track/requests/{trackingUrl}
     // a join of multiple tables, returns a List[TrackedPriceRecord]
-    case req @ GET -> Root / "tracking" / trackingUrl =>
+    case GET -> Root / "track" / "requests" / trackingUrl =>
       service
         .getTrackingRequestHistory(trackingUrl)
         .flatMap {

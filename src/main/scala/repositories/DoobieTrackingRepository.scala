@@ -113,7 +113,7 @@ class DoobieTrackingRepository[F[_]: Async](
 
     val (platform_id, tracked_product_id, tracked_product_price) =
       (platform.id, product.id, product.price)
-    val status = TrackingStatuses.Tracking.toString
+    val status    = TrackingStatuses.Tracking.toString
     val trackedAt = Instant.now()
     val shortCode = ShortCodeGenerator.generate(8)
 

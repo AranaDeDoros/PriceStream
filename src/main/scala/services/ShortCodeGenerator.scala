@@ -10,5 +10,5 @@ object ShortCodeGenerator:
   def generate(length: Int = 8): String =
     val bytes = new Array[Byte](length)
     Random.nextBytes(bytes)
-    val chars = for b <- bytes yield Alphabet((b & 0xFF) % Alphabet.length)
+    val chars = for b <- bytes yield Alphabet((b & 0xff) % Alphabet.length)
     new String(chars)

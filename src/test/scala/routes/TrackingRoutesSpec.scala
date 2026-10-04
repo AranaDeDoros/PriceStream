@@ -3,7 +3,7 @@ package routes
 
 import domain.dto.*
 import domain.errors.TrackingError
-import domain.models.{CatalogueProduct, PriceUpdate, TrackedPriceRecord, TrackingStatuses}
+import domain.models.{CatalogueProduct, Platform, PriceUpdate, TrackedPriceRecord, TrackingStatuses}
 import services.interfaces.TrackingService
 import cats.effect.{IO, Ref}
 import io.circe.Json
@@ -21,7 +21,8 @@ class TrackingRoutesSpec extends CatsEffectSuite {
     trackPriceResult: Either[TrackingError, TrackPriceResponse],
     historyResult: Either[TrackingError, List[PriceUpdate]],
     productsResult: List[CatalogueProduct],
-    observedPlatform: Ref[IO, Option[Option[String]]]
+    observedPlatform: Ref[IO, Option[Option[String]]],
+    trackingHistoryResult: List[TrackedPriceRecord] = Nil
   ) extends TrackingService[IO] {
 
     override def trackPrice(
@@ -36,11 +37,13 @@ class TrackingRoutesSpec extends CatsEffectSuite {
     override def listProducts(platform: Option[String]): IO[List[CatalogueProduct]] =
       observedPlatform.set(Some(platform)) *> IO.pure(productsResult)
 
-    override def getTrackingRequestHistory(url: String): IO[List[TrackedPriceRecord]] = ???
+    override def getTrackingRequestHistory(url: String): IO[List[TrackedPriceRecord]] =
+      IO.pure(trackingHistoryResult)
   }
 
-  test("POST /track returns 201 with the tracking response") {
-    val trackedAt = Instant.parse("2024-01-03T10:00:00Z")
+  test("POST /track returns 201 with a short tracking URL") {
+    val trackedAt   = Instant.parse("2024-01-03T10:00:00Z")
+    val trackingUrl = "aB3dE5fG"
 
     for {
       observed <- Ref.of[IO, Option[Option[String]]](None)
@@ -49,7 +52,8 @@ class TrackingRoutesSpec extends CatsEffectSuite {
         trackPriceResult = Right(
           TrackPriceResponse(
             status = TrackingStatuses.Tracking,
-            trackedAt = trackedAt
+            trackedAt = trackedAt,
+            trackingUrl = trackingUrl
           )
         ),
         historyResult = Right(Nil),
@@ -72,6 +76,40 @@ class TrackingRoutesSpec extends CatsEffectSuite {
       assertEquals(response.status.code, 201)
       assertEquals(body.status, TrackingStatuses.Tracking)
       assertEquals(body.trackedAt, trackedAt)
+      assertEquals(body.trackingUrl, trackingUrl)
+    }
+  }
+
+  test("GET /track/requests/{trackingUrl} returns the tracking request history") {
+    val recordedAt  = Instant.parse("2024-01-03T10:00:00Z")
+    val trackingUrl = "aB3dE5fG"
+    val record = TrackedPriceRecord(
+      name = "Kindle",
+      price = BigDecimal("149.50"),
+      platform = Platform(5L, "amazon", "https://amazon.example"),
+      recordedAt = recordedAt,
+      trackedPrice = BigDecimal("159.99")
+    )
+
+    for {
+      observed <- Ref.of[IO, Option[Option[String]]](None)
+      service = new StubTrackingService(
+        trackPriceResult = Right(TrackPriceResponse(trackedAt = recordedAt, trackingUrl = trackingUrl)),
+        historyResult = Right(Nil),
+        productsResult = Nil,
+        observedPlatform = observed,
+        trackingHistoryResult = List(record)
+      )
+      request = Request[IO](GET, Uri.unsafeFromString(s"/track/requests/$trackingUrl"))
+      response <- new TrackingRoutes[IO](service).httpRoutes.orNotFound.run(request)
+      body     <- response.as[Json]
+    } yield {
+      assertEquals(response.status.code, 200)
+      val firstRecord = body.hcursor.downArray
+      assertEquals(firstRecord.get[String]("name"), Right("Kindle"))
+      assertEquals(firstRecord.get[BigDecimal]("price"), Right(BigDecimal("149.50")))
+      assertEquals(firstRecord.get[String]("recordedAt"), Right(recordedAt.toString))
+      assertEquals(firstRecord.get[BigDecimal]("trackedPrice"), Right(BigDecimal("159.99")))
     }
   }
 
@@ -81,7 +119,7 @@ class TrackingRoutesSpec extends CatsEffectSuite {
     for {
       observed <- Ref.of[IO, Option[Option[String]]](None)
       service = new StubTrackingService(
-        trackPriceResult = Right(TrackPriceResponse(trackedAt = recordedAt)),
+        trackPriceResult = Right(TrackPriceResponse(trackedAt = recordedAt, trackingUrl = "aB3dE5fG")),
         historyResult = Right(List(PriceUpdate(BigDecimal("149.50"), recordedAt))),
         productsResult = Nil,
         observedPlatform = observed
@@ -101,7 +139,7 @@ class TrackingRoutesSpec extends CatsEffectSuite {
     for {
       observed <- Ref.of[IO, Option[Option[String]]](None)
       service = new StubTrackingService(
-        trackPriceResult = Right(TrackPriceResponse(trackedAt = Instant.EPOCH)),
+        trackPriceResult = Right(TrackPriceResponse(trackedAt = Instant.EPOCH, trackingUrl = "aB3dE5fG")),
         historyResult = Left(TrackingError.ProductNotFound("SKU-404")),
         productsResult = Nil,
         observedPlatform = observed
@@ -115,7 +153,7 @@ class TrackingRoutesSpec extends CatsEffectSuite {
     for {
       observed <- Ref.of[IO, Option[Option[String]]](None)
       service = new StubTrackingService(
-        trackPriceResult = Right(TrackPriceResponse(trackedAt = Instant.EPOCH)),
+        trackPriceResult = Right(TrackPriceResponse(trackedAt = Instant.EPOCH, trackingUrl = "aB3dE5fG")),
         historyResult = Right(Nil),
         productsResult =
           List(CatalogueProduct(1L, 5L, "SKU-1", Some("Kindle"), Some("https://example.com"), BigDecimal("149.50"))),
