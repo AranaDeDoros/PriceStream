@@ -37,8 +37,7 @@ two groups:
 - `/tracking` for recording prices and retrieving product history
 - `/api` for ingestion-run and platform data used by the dashboard
 
-All successful responses are JSON, except `POST /tracking/track`, which
-returns an empty response body.
+All successful responses are JSON.
 
 ---
 
@@ -47,6 +46,7 @@ returns an empty response body.
 | Method | Path | Description |
 | --- | --- | --- |
 | `POST` | `/tracking/track` | Creates the platform and product if needed, then records a price. |
+| `GET` | `/tracking/track/requests/{trackingUrl}` | Returns a tracking request's price history by short code. |
 | `GET` | `/tracking/history/{platform}/{externalId}` | Returns the recorded price history for one product. |
 | `GET` | `/tracking/products` | Lists all tracked products. |
 | `GET` | `/tracking/products?platform={platform}` | Lists products for a platform. The filter is case-insensitive. |
@@ -62,7 +62,43 @@ curl -i -X POST http://localhost:8080/tracking/track \
   }'
 ```
 
-This returns a TrackPriceResponse with `201 Created` as status. 
+This returns `201 Created` with a short URL for retrieving the tracking
+request's history:
+
+```json
+{
+  "status": "Tracking",
+  "trackedAt": "2026-10-04T12:00:00Z",
+  "trackingUrl": "aB3dE5fG"
+}
+```
+
+---
+
+Retrieve the history for a tracking request. Use the `trackingUrl` returned
+when the request was created:
+
+```bash
+curl http://localhost:8080/tracking/track/requests/aB3dE5fG
+```
+
+Example response:
+
+```json
+[
+  {
+    "name": "Example product",
+    "price": 149.50,
+    "platform": {
+      "id": 1,
+      "name": "dummyjson",
+      "baseUrl": "https://dummyjson.com"
+    },
+    "recordedAt": "2026-09-27T12:00:00Z",
+    "trackedPrice": 159.99
+  }
+]
+```
 
 ---
 
