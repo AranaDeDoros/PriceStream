@@ -7,6 +7,7 @@ val CirceVersion      = "0.14.6"
 val MunitVersion = "1.0.0-M11"
 val Fs2Version = "3.12.2"
 val FlywayVersion = "13.8.0"
+val PrometheusVersion = "0.16.0"
 
 enablePlugins(JavaAppPackaging)
 enablePlugins(DockerPlugin)
@@ -72,6 +73,12 @@ lazy val root = project
 
       // For jobs
       "co.fs2" %% "fs2-core" % Fs2Version,
+
+      // ========================
+      // Metrics
+      // ========================
+      "io.prometheus" % "simpleclient" % PrometheusVersion,
+      "io.prometheus" % "simpleclient_common" % PrometheusVersion,
 
     ),
     testFrameworks += new TestFramework("munit.Framework")

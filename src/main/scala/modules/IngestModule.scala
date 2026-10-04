@@ -3,6 +3,7 @@ package modules
 
 import domain.models.{IngestionRun, IngestionStatus, Platform}
 import factories.ProviderFactory
+import metrics.PrometheusMetrics
 import repositories.interfaces.LoggerRepository
 import repositories.*
 import services.*
@@ -83,9 +84,11 @@ object IngestModule:
 
       _ <- result match
         case Right(count) =>
-          loggerRepo.updateWithSummary(id, IngestionStatus.Completed, count)
+          loggerRepo.updateWithSummary(id, IngestionStatus.Completed, count) *>
+            IO(PrometheusMetrics.recordIngestionSuccess(count))
 
         case Left(e) =>
           loggerRepo.updateWithError(id, IngestionStatus.Failed, e.getMessage) *>
+            IO(PrometheusMetrics.recordIngestionFailure()) *>
             logger.error(e)("Ingestion failed")
     } yield ()

@@ -3,7 +3,6 @@ package org.aranadedoros.pricestream
 import com.comcast.ip4s.{ipv4, port}
 import com.typesafe.config.ConfigFactory
 import modules.*
-import routes.ExternalAPIRoutes
 import cats.effect.{IO, IOApp, Resource}
 import cats.syntax.all.*
 import doobie.hikari.HikariTransactor
@@ -11,7 +10,6 @@ import doobie.util.ExecutionContexts
 import org.flywaydb.core.Flyway
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
-import org.http4s.server.Router
 import org.typelevel.log4cats.LoggerFactory
 import org.typelevel.log4cats.slf4j.Slf4jFactory
 import scala.concurrent.duration.*
@@ -62,13 +60,7 @@ object Main extends IOApp.Simple:
               platforms   <- Resource.eval(platformSvc.all)
               trackingSvc <- Resource.eval(TrackingModule.make[IO](xa))
               externalSvc <- Resource.eval(ExternalAPIModule.make(xa))
-              trackingRoutes = HttpModule.routes[IO](trackingSvc)
-              externalRoutes = ExternalAPIRoutes.routes(externalSvc, platformSvc)
-
-              httpApp = Router(
-                "/tracking" -> trackingRoutes,
-                "/api"      -> externalRoutes
-              ).orNotFound
+              httpApp = HttpModule.app(trackingSvc, externalSvc, platformSvc)
 
               server <- EmberServerBuilder
                 .default[IO]
