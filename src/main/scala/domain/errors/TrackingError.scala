@@ -10,7 +10,7 @@ object TrackingError:
   ) extends TrackingError
 
   final case class PlatformNotFound(
-    platform: String,
+    platform: String
   ) extends TrackingError
 
   final case class InvalidPrice(

@@ -7,25 +7,24 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 
-
 object TrackedPriceRecord:
   given Encoder[TrackedPriceRecord] = deriveEncoder
   given Decoder[TrackedPriceRecord] = deriveDecoder
 
 enum TrackingStatuses:
-    case Tracking, Stopped
-    
+  case Tracking, Stopped
+
 case class TrackingParams(
   platform: String,
-  externalId: String,
+  externalId: String
 )
 
 case class TrackedPriceRecord(
-   name: String,
-   price: BigDecimal,
-   platform: Platform,
-   recordedAt : Instant,
-   trackedPrice: BigDecimal
+  name: String,
+  price: BigDecimal,
+  platform: Platform,
+  recordedAt: Instant,
+  trackedPrice: BigDecimal
 )
 
 object TrackingStatuses:
@@ -38,13 +37,14 @@ object TrackingStatuses:
 
 def trackingUrl(base: String, params: TrackingParams): String =
   val values = List(
-    "plat"   -> params.platform,
-    "exid"   -> params.externalId,
-  ) 
+    "plat" -> params.platform,
+    "exid" -> params.externalId
+  )
 
   val query = values
-    .map { case (key, value) =>
-      s"$key=${URLEncoder.encode(value, StandardCharsets.UTF_8)}"
+    .map {
+      case (key, value) =>
+        s"$key=${URLEncoder.encode(value, StandardCharsets.UTF_8)}"
     }
     .mkString("&")
 

@@ -29,6 +29,6 @@ trait TrackingRepository[F[_]]:
 
   def listProductsByPlatform(platform: String): F[List[CatalogueProduct]]
 
-  def insertTrackingRequest(platform: Platform, product: CatalogueProduct) : F[TrackPriceResponse]
-  
-  def getTrackingPriceHistory(url: String) : F[List[TrackedPriceRecord]]
+  def insertTrackingRequest(platform: Platform, product: CatalogueProduct): F[TrackPriceResponse]
+
+  def getTrackingPriceHistory(url: String): F[List[TrackedPriceRecord]]

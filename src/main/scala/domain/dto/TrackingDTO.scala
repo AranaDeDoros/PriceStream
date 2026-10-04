@@ -4,16 +4,16 @@ import domain.models.TrackingStatuses
 import io.circe.Codec
 import java.time.Instant
 
-// Use the 'derives' keyword for automatic derivation in Scala 3
 final case class TrackPriceRequest(
   platform: String,
-  externalId: String,
+  externalId: String
 ) derives Codec.AsObject
 
 // by default start as tracking
 final case class TrackPriceResponse(
-  status : TrackingStatuses = TrackingStatuses.Tracking,
-  trackedAt : Instant
+  status: TrackingStatuses = TrackingStatuses.Tracking,
+  trackedAt: Instant,
+  trackingUrl: String
 ) derives Codec.AsObject
 
 final case class PriceUpdateResponse(

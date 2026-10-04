@@ -1,19 +1,16 @@
+package org.aranadedoros.pricestream
 package routes
 
+import domain.models.{IngestionRun, IngestionStatus, Platform}
+import repositories.interfaces.{IngestRepository, PlatformRepository}
+import services.{ExternalAPIService, PlatformProviderService}
 import cats.effect.IO
-import munit.CatsEffectSuite
-import org.aranadedoros.pricestream.domain.models.{IngestionRun, IngestionStatus}
-import org.aranadedoros.pricestream.repositories.interfaces.IngestRepository
-import org.aranadedoros.pricestream.routes.ExternalAPIRoutes
-import org.aranadedoros.pricestream.services.ExternalAPIService
-import org.aranadedoros.pricestream.services.PlatformProviderService
-import org.aranadedoros.pricestream.domain.models.Platform
-import org.aranadedoros.pricestream.repositories.interfaces.PlatformRepository
-import org.http4s.Method.GET
-import org.http4s.{Request, Uri}
-import org.http4s.implicits.*
-import org.http4s.circe.CirceEntityCodec.*
 import io.circe.Json
+import munit.CatsEffectSuite
+import org.http4s.Method.GET
+import org.http4s.circe.CirceEntityCodec.*
+import org.http4s.implicits.*
+import org.http4s.{Request, Uri}
 import java.time.Instant
 import java.util.UUID
 

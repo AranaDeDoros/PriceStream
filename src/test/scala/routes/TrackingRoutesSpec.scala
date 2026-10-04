@@ -1,28 +1,27 @@
+package org.aranadedoros.pricestream
 package routes
 
+import domain.dto.*
+import domain.errors.TrackingError
+import domain.models.{CatalogueProduct, PriceUpdate, TrackedPriceRecord, TrackingStatuses}
+import services.interfaces.TrackingService
 import cats.effect.{IO, Ref}
+import io.circe.Json
 import munit.CatsEffectSuite
-
-import org.aranadedoros.pricestream.domain.dto.*
-import org.aranadedoros.pricestream.domain.errors.TrackingError
-import org.aranadedoros.pricestream.domain.models.{PriceUpdate, CatalogueProduct, TrackingStatuses}
-import org.aranadedoros.pricestream.routes.TrackingRoutes
-import org.aranadedoros.pricestream.services.interfaces.TrackingService
-
 import org.http4s.Method.{GET, POST}
+import org.http4s.circe.CirceEntityCodec.*
 import org.http4s.implicits.*
 import org.http4s.{Request, Uri}
-import org.http4s.circe.CirceEntityCodec._
-import io.circe.Json
+
 import java.time.Instant
 
 class TrackingRoutesSpec extends CatsEffectSuite {
 
   private class StubTrackingService(
-                                     trackPriceResult: Either[TrackingError, TrackPriceResponse],
-                                     historyResult: Either[TrackingError, List[PriceUpdate]],
-                                     productsResult: List[CatalogueProduct],
-                                     observedPlatform: Ref[IO, Option[Option[String]]]
+    trackPriceResult: Either[TrackingError, TrackPriceResponse],
+    historyResult: Either[TrackingError, List[PriceUpdate]],
+    productsResult: List[CatalogueProduct],
+    observedPlatform: Ref[IO, Option[Option[String]]]
   ) extends TrackingService[IO] {
 
     override def trackPrice(
@@ -36,6 +35,8 @@ class TrackingRoutesSpec extends CatsEffectSuite {
 
     override def listProducts(platform: Option[String]): IO[List[CatalogueProduct]] =
       observedPlatform.set(Some(platform)) *> IO.pure(productsResult)
+
+    override def getTrackingRequestHistory(url: String): IO[List[TrackedPriceRecord]] = ???
   }
 
   test("POST /track returns 201 with the tracking response") {
@@ -73,7 +74,6 @@ class TrackingRoutesSpec extends CatsEffectSuite {
       assertEquals(body.trackedAt, trackedAt)
     }
   }
-
 
   test("GET /history/{platform}/{externalId} returns a history") {
     val recordedAt = Instant.parse("2024-01-03T10:00:00Z")
@@ -117,7 +117,8 @@ class TrackingRoutesSpec extends CatsEffectSuite {
       service = new StubTrackingService(
         trackPriceResult = Right(TrackPriceResponse(trackedAt = Instant.EPOCH)),
         historyResult = Right(Nil),
-        productsResult = List(CatalogueProduct(1L, 5L, "SKU-1", Some("Kindle"), Some("https://example.com"), BigDecimal("149.50"))),
+        productsResult =
+          List(CatalogueProduct(1L, 5L, "SKU-1", Some("Kindle"), Some("https://example.com"), BigDecimal("149.50"))),
         observedPlatform = observed
       )
       request = Request[IO](GET, uri"/products?platform=AMAZON")

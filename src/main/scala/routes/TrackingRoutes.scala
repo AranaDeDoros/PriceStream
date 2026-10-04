@@ -18,7 +18,7 @@ class TrackingRoutes[F[_]: Async](
 ) extends Http4sDsl[F]:
 
   given EntityDecoder[F, TrackPriceRequest]         = jsonOf
-  given EntityDecoder[F, TrackPriceResponse]         = jsonOf
+  given EntityDecoder[F, TrackPriceResponse]        = jsonOf
   given EntityEncoder[F, List[PriceUpdateResponse]] = jsonEncoderOf
 
   private def mapError(error: TrackingError): F[Response[F]] =
@@ -46,10 +46,10 @@ class TrackingRoutes[F[_]: Async](
       for {
         body <- req.as[TrackPriceRequest]
 
-        result   <- service.trackPrice(body)
+        result <- service.trackPrice(body)
         response <- result match {
           case Right(resp) => Created(resp)
-          case Left(err) => mapError(err)
+          case Left(err)   => mapError(err)
         }
 
       } yield response
@@ -64,7 +64,6 @@ class TrackingRoutes[F[_]: Async](
             val response = history
             Ok(response)
         }
-
 
     // GET /api/history/{platform}/{externalId}
     case GET -> Root / "history" / platform / externalId =>

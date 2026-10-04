@@ -10,10 +10,9 @@ case class CatalogueProduct(
   name: Option[String],
   url: Option[String],
   price: BigDecimal
-) 
+)
 
 case class PriceUpdate(
   price: BigDecimal,
   recordedAt: Instant
 )
-

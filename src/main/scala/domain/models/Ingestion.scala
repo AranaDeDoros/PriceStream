@@ -58,7 +58,7 @@ object IngestionRunDTO:
       startedAt = run.startedAt,
       finishedAt = run.finishedAt,
       status = run.status.toString,
-      error= run.error,
-      products_processed =  run.products_processed
+      error = run.error,
+      products_processed = run.products_processed
     )
   given Encoder[IngestionRunDTO] = deriveEncoder

@@ -12,6 +12,7 @@ import doobie.Transactor
 import doobie.implicits.*
 import doobie.postgres.implicits.*
 import doobie.util.Get
+import org.aranadedoros.pricestream.services.ShortCodeGenerator
 
 import java.time.Instant
 
@@ -23,7 +24,7 @@ class DoobieTrackingRepository[F[_]: Async](
     Get[String].temap(
       TrackingStatuses.fromString
     )
-    
+
   // Platform
   def findPlatformByName(name: String): F[Option[Platform]] =
     sql"""
@@ -108,23 +109,33 @@ class DoobieTrackingRepository[F[_]: Async](
       .to[List]
       .transact(xa)
 
+  override def insertTrackingRequest(platform: Platform, product: CatalogueProduct): F[TrackPriceResponse] =
 
-  override def insertTrackingRequest(platform: Platform, product: CatalogueProduct) : F[TrackPriceResponse] =
-
-    val (platform_id, tracked_product_id, tracked_product_price) = 
-        (platform.id, product.id, product.price)
+    val (platform_id, tracked_product_id, tracked_product_price) =
+      (platform.id, product.id, product.price)
     val status = TrackingStatuses.Tracking.toString
     val trackedAt = Instant.now()
+    val shortCode = ShortCodeGenerator.generate(8)
 
     sql"""
-      INSERT INTO tracking_requests (tracked_product_id, tracked_product_price, platform_id, status, tracked_at)
-      VALUES ($tracked_product_id, $tracked_product_price, $platform_id, $status, $trackedAt)
-      RETURNING status, tracked_at
+      WITH new_request AS (
+        INSERT INTO tracking_requests (tracked_product_id, tracked_product_price, platform_id, status, tracked_at)
+        VALUES ($tracked_product_id, $tracked_product_price, $platform_id, $status, $trackedAt)
+        RETURNING id, status, tracked_at
+      ),
+      new_url AS (
+        INSERT INTO tracking_urls (tracking_request_id, url)
+        SELECT id, $shortCode FROM new_request
+        RETURNING url
+      )
+      SELECT req.status, req.tracked_at, url.url
+      FROM new_request req
+      CROSS JOIN new_url url
     """.query[TrackPriceResponse]
       .unique
       .transact(xa)
 
-  override def getTrackingPriceHistory(url: String)  : F[List[TrackedPriceRecord]] =
+  override def getTrackingPriceHistory(url: String): F[List[TrackedPriceRecord]] =
     sql"""
         SELECT  p."name", ph.price, pl."name" AS platform, ph.recorded_at, tr.tracked_product_price AS tracked_price
         FROM price_history ph
@@ -137,7 +148,7 @@ class DoobieTrackingRepository[F[_]: Async](
         JOIN tracking_urls tu
         ON tu.tracking_request_id  = tr.id
         WHERE tr.status = 'Tracking'
-        AND tu.url = $url
+        AND tu.url = '$url'
     """.query[TrackedPriceRecord]
       .to[List]
       .transact(xa)

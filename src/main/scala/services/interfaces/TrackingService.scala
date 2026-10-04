@@ -8,7 +8,7 @@ import domain.models.{CatalogueProduct, PriceUpdate, TrackedPriceRecord}
 
 trait TrackingService[F[_]]:
   def trackPrice(
-    request: TrackPriceRequest,
+    request: TrackPriceRequest
   ): F[Either[TrackingError, TrackPriceResponse]]
 
   def getHistory(
@@ -18,4 +18,4 @@ trait TrackingService[F[_]]:
 
   def listProducts(platform: Option[String]): F[List[CatalogueProduct]]
 
-  def getTrackingRequestHistory(url: String) : F[List[TrackedPriceRecord]]
+  def getTrackingRequestHistory(url: String): F[List[TrackedPriceRecord]]

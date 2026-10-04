@@ -11,7 +11,6 @@ import cats.effect.Sync
 import cats.syntax.all.*
 import cats.data.EitherT
 
-
 class LiveTrackingService[F[_]: Sync](
   repo: TrackingRepository[F]
 ) extends TrackingService[F]:
@@ -33,41 +32,40 @@ class LiveTrackingService[F[_]: Sync](
       case None    => repo.createProduct(platformId, externalId, name, url)
     }
 
-
-  private def getPlatform(name: String) : F[Either[TrackingError,Platform]] =
+  private def getPlatform(name: String): F[Either[TrackingError, Platform]] =
     repo.findPlatformByName(name).flatMap {
-      case Some(p) =>  p.asRight[TrackingError].pure[F]
+      case Some(p) => p.asRight[TrackingError].pure[F]
       case None    => TrackingError.PlatformNotFound(name).asLeft.pure[F]
     }
 
   private def getProduct(
     platformId: Long,
-    externalId: String,
-  ):  F[Either[TrackingError,CatalogueProduct]] =
+    externalId: String
+  ): F[Either[TrackingError, CatalogueProduct]] =
     repo.findProduct(platformId, externalId).flatMap {
-      case Some(p) =>  p.asRight[TrackingError].pure[F]
-       case None    =>  TrackingError.ProductNotFound(externalId)
+      case Some(p) => p.asRight[TrackingError].pure[F]
+      case None => TrackingError.ProductNotFound(externalId)
           .asLeft
           .pure[F]
-    }  
+    }
 
   override def trackPrice(
-    request: TrackPriceRequest,
+    request: TrackPriceRequest
   ): F[Either[TrackingError, TrackPriceResponse]] =
 
-      val program =
-        for {
-          pl <- EitherT(getPlatform(request.platform))
-          pr <- EitherT(getProduct(pl.id, request.externalId))
-          resp  <- EitherT.liftF(repo.insertTrackingRequest(pl, pr))
-        } yield resp
+    val program =
+      for {
+        pl   <- EitherT(getPlatform(request.platform))
+        pr   <- EitherT(getProduct(pl.id, request.externalId))
+        resp <- EitherT.liftF(repo.insertTrackingRequest(pl, pr))
+      } yield resp
 
-      program
-        .value
-        .handleError(
-          e =>
-            TrackingError.PersistenceError(e.getMessage).asLeft
-        )
+    program
+      .value
+      .handleError(
+        e =>
+          TrackingError.PersistenceError(e.getMessage).asLeft
+      )
 
   override def getHistory(
     platform: String,
@@ -97,5 +95,5 @@ class LiveTrackingService[F[_]: Sync](
       case Some(p) => repo.listProductsByPlatform(p)
       case None    => repo.listProducts
 
-  override def getTrackingRequestHistory(url: String) : F[List[TrackedPriceRecord]] =
+  override def getTrackingRequestHistory(url: String): F[List[TrackedPriceRecord]] =
     repo.getTrackingPriceHistory(url)

@@ -27,7 +27,7 @@ class DummyJsonProvider(
         response.products.map {
           dto =>
             CatalogueProduct(
-              id = 0L, 
+              id = 0L,
               platformId = platform.id,
               externalId = dto.id.toString,
               name = Some(dto.title),

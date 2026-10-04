@@ -1,7 +1,7 @@
 package org.aranadedoros.pricestream
 package services.providers
 
-import domain.models.{Price, CatalogueProduct}
+import domain.models.{CatalogueProduct, Price}
 
 import cats.effect.IO
 
