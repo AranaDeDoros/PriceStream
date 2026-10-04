@@ -3,9 +3,10 @@ package services
 
 import domain.errors.TrackingError
 import domain.dto.{TrackPriceRequest, TrackPriceResponse}
-import domain.models.{Platform, PriceUpdate, TrackedProduct}
+import domain.models.{CatalogueProduct, Platform, PriceUpdate, TrackedPriceRecord}
 import repositories.interfaces.TrackingRepository
 import services.interfaces.TrackingService
+
 import cats.effect.Sync
 import cats.syntax.all.*
 import cats.data.EitherT
@@ -26,7 +27,7 @@ class LiveTrackingService[F[_]: Sync](
     externalId: String,
     name: Option[String],
     url: Option[String]
-  ): F[TrackedProduct] =
+  ): F[CatalogueProduct] =
     repo.findProduct(platformId, externalId).flatMap {
       case Some(p) => p.pure[F]
       case None    => repo.createProduct(platformId, externalId, name, url)
@@ -42,7 +43,7 @@ class LiveTrackingService[F[_]: Sync](
   private def getProduct(
     platformId: Long,
     externalId: String,
-  ):  F[Either[TrackingError,TrackedProduct]] =
+  ):  F[Either[TrackingError,CatalogueProduct]] =
     repo.findProduct(platformId, externalId).flatMap {
       case Some(p) =>  p.asRight[TrackingError].pure[F]
        case None    =>  TrackingError.ProductNotFound(externalId)
@@ -91,7 +92,10 @@ class LiveTrackingService[F[_]: Sync](
         }
     }
 
-  def listProducts(platform: Option[String]): F[List[TrackedProduct]] =
+  override def listProducts(platform: Option[String]): F[List[CatalogueProduct]] =
     platform match
       case Some(p) => repo.listProductsByPlatform(p)
       case None    => repo.listProducts
+
+  override def getTrackingRequestHistory(url: String) : F[List[TrackedPriceRecord]] =
+    repo.getTrackingPriceHistory(url)

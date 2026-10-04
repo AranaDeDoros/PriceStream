@@ -1,7 +1,7 @@
 package org.aranadedoros.pricestream
 package services
 
-import domain.models.TrackedProduct
+import domain.models.CatalogueProduct
 import repositories.interfaces.{PriceRepository, ProductRepository}
 import services.providers.ProductProvider
 
@@ -25,7 +25,7 @@ class IngestService(
 
   private def processProduct(
     provider: ProductProvider,
-    externalProduct: TrackedProduct
+    externalProduct: CatalogueProduct
   ): IO[Unit] =
     for {
       persisted <- ensureProductExists(externalProduct)
@@ -33,8 +33,8 @@ class IngestService(
     } yield ()
 
   private def ensureProductExists(
-    p: TrackedProduct
-  ): IO[TrackedProduct] =
+    p: CatalogueProduct
+  ): IO[CatalogueProduct] =
     productRepo
       .findByExternalId(p.platformId, p.externalId)
       .flatMap {
@@ -44,7 +44,7 @@ class IngestService(
 
   private def updatePriceIfChanged(
     provider: ProductProvider,
-    product: TrackedProduct
+    product: CatalogueProduct
   ): IO[Unit] =
     for {
       maybeNewPrice <- provider.fetchPrice(product.externalId)

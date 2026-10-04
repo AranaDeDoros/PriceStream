@@ -7,7 +7,6 @@ import domain.models.*
 import services.interfaces.TrackingService
 import cats.effect.*
 import cats.syntax.all.*
-import io.circe.generic.auto.*
 import org.http4s.*
 import org.http4s.circe.*
 import org.http4s.circe.CirceEntityCodec.circeEntityEncoder
@@ -54,6 +53,18 @@ class TrackingRoutes[F[_]: Async](
         }
 
       } yield response
+
+    // GET /tracking/track/{tracking_url}
+    // a join of multiple tables, returns a List[TrackedPriceRecord]
+    case req @ GET -> Root / "tracking" / trackingUrl =>
+      service
+        .getTrackingRequestHistory(trackingUrl)
+        .flatMap {
+          history =>
+            val response = history
+            Ok(response)
+        }
+
 
     // GET /api/history/{platform}/{externalId}
     case GET -> Root / "history" / platform / externalId =>

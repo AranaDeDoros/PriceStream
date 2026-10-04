@@ -1,9 +1,16 @@
 package org.aranadedoros.pricestream
 package domain.models
 
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.{Decoder, Encoder}
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.time.Instant
 
+
+object TrackedPriceRecord:
+  given Encoder[TrackedPriceRecord] = deriveEncoder
+  given Decoder[TrackedPriceRecord] = deriveDecoder
 
 enum TrackingStatuses:
     case Tracking, Stopped
@@ -11,6 +18,14 @@ enum TrackingStatuses:
 case class TrackingParams(
   platform: String,
   externalId: String,
+)
+
+case class TrackedPriceRecord(
+   name: String,
+   price: BigDecimal,
+   platform: Platform,
+   recordedAt : Instant,
+   trackedPrice: BigDecimal
 )
 
 object TrackingStatuses:

@@ -19,14 +19,14 @@ class DummyJsonProvider(
 
   override val baseUri = uri"https://dummyjson.com"
 
-  override def fetchProducts(): IO[List[TrackedProduct]] =
+  override def fetchProducts(): IO[List[CatalogueProduct]] =
     client.expect[DummyProductsResponse](
       Request[IO](GET, baseUri / "products")
     ).map {
       response =>
         response.products.map {
           dto =>
-            TrackedProduct(
+            CatalogueProduct(
               id = 0L, 
               platformId = platform.id,
               externalId = dto.id.toString,

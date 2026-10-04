@@ -12,21 +12,23 @@ trait TrackingRepository[F[_]]:
   def createPlatform(name: String): F[Platform]
 
   // Product
-  def findProduct(platformId: Long, externalId: String): F[Option[TrackedProduct]]
+  def findProduct(platformId: Long, externalId: String): F[Option[CatalogueProduct]]
   def createProduct(
     platformId: Long,
     externalId: String,
     name: Option[String],
     url: Option[String]
-  ): F[TrackedProduct]
+  ): F[CatalogueProduct]
 
   // Price
   def insertPrice(productId: Long, price: BigDecimal): F[Unit]
 
   def getPriceHistory(productId: Long): F[List[PriceUpdate]]
 
-  def listProducts: F[List[TrackedProduct]]
+  def listProducts: F[List[CatalogueProduct]]
 
-  def listProductsByPlatform(platform: String): F[List[TrackedProduct]]
+  def listProductsByPlatform(platform: String): F[List[CatalogueProduct]]
 
-  def insertTrackingRequest(platform: Platform, product: TrackedProduct) : F[TrackPriceResponse]
+  def insertTrackingRequest(platform: Platform, product: CatalogueProduct) : F[TrackPriceResponse]
+  
+  def getTrackingPriceHistory(url: String) : F[List[TrackedPriceRecord]]

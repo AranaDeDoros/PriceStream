@@ -2,9 +2,8 @@ package org.aranadedoros.pricestream
 package repositories
 
 import domain.models
-import domain.models.{Platform, PriceUpdate, TrackedProduct}
+import domain.models.{CatalogueProduct, Platform, PriceUpdate, TrackedPriceRecord, TrackingStatuses}
 import domain.dto.TrackPriceResponse
-import domain.models.TrackingStatuses
 import repositories.interfaces.TrackingRepository
 
 import cats.effect.Async
@@ -45,13 +44,13 @@ class DoobieTrackingRepository[F[_]: Async](
       .transact(xa)
 
   // Product
-  def findProduct(platformId: Long, externalId: String): F[Option[TrackedProduct]] =
+  def findProduct(platformId: Long, externalId: String): F[Option[CatalogueProduct]] =
     sql"""
       SELECT id, platform_id, external_id, name, url
       FROM products
       WHERE platform_id = $platformId
         AND external_id = $externalId
-    """.query[TrackedProduct]
+    """.query[CatalogueProduct]
       .option
       .transact(xa)
 
@@ -60,12 +59,12 @@ class DoobieTrackingRepository[F[_]: Async](
     externalId: String,
     name: Option[String],
     url: Option[String]
-  ): F[TrackedProduct] =
+  ): F[CatalogueProduct] =
     sql"""
       INSERT INTO products (platform_id, external_id, name, url)
       VALUES ($platformId, $externalId, $name, $url)
       RETURNING id, platform_id, external_id, name, url
-    """.query[TrackedProduct]
+    """.query[CatalogueProduct]
       .unique
       .transact(xa)
 
@@ -89,28 +88,28 @@ class DoobieTrackingRepository[F[_]: Async](
       .to[List]
       .transact(xa)
 
-  override def listProducts: F[List[TrackedProduct]] =
+  override def listProducts: F[List[CatalogueProduct]] =
     sql"""
       SELECT pr.id, pr.platform, pr.external_id, pr.name, pr.url
       FROM products pr
     """
-      .query[TrackedProduct]
+      .query[CatalogueProduct]
       .to[List]
       .transact(xa)
 
-  override def listProductsByPlatform(platform: String): F[List[TrackedProduct]] =
+  override def listProductsByPlatform(platform: String): F[List[CatalogueProduct]] =
     sql"""
       SELECT pr.id, pr.platform_id, pr.external_id, pr.name, pr.url
       FROM products pr
       JOIN platforms pl ON pl.id = pr.platform_id
       WHERE pl.name = $platform
     """
-      .query[TrackedProduct]
+      .query[CatalogueProduct]
       .to[List]
       .transact(xa)
 
 
-  override def insertTrackingRequest(platform: Platform, product: TrackedProduct) : F[TrackPriceResponse] =
+  override def insertTrackingRequest(platform: Platform, product: CatalogueProduct) : F[TrackPriceResponse] =
 
     val (platform_id, tracked_product_id, tracked_product_price) = 
         (platform.id, product.id, product.price)
@@ -123,4 +122,22 @@ class DoobieTrackingRepository[F[_]: Async](
       RETURNING status, tracked_at
     """.query[TrackPriceResponse]
       .unique
+      .transact(xa)
+
+  override def getTrackingPriceHistory(url: String)  : F[List[TrackedPriceRecord]] =
+    sql"""
+        SELECT  p."name", ph.price, pl."name" AS platform, ph.recorded_at, tr.tracked_product_price AS tracked_price
+        FROM price_history ph
+        JOIN products p
+        ON p.id  = ph.product_id
+        JOIN platforms pl
+        ON p.platform = pl.id
+        JOIN tracking_requests tr
+        ON tr.tracked_product_id = p.id
+        JOIN tracking_urls tu
+        ON tu.tracking_request_id  = tr.id
+        WHERE tr.status = 'Tracking'
+        AND tu.url = $url
+    """.query[TrackedPriceRecord]
+      .to[List]
       .transact(xa)

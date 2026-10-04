@@ -4,7 +4,7 @@ package services.interfaces
 import domain.dto.TrackPriceResponse
 import domain.dto.TrackPriceRequest
 import domain.errors.TrackingError
-import domain.models.{PriceUpdate, TrackedProduct}
+import domain.models.{CatalogueProduct, PriceUpdate, TrackedPriceRecord}
 
 trait TrackingService[F[_]]:
   def trackPrice(
@@ -16,4 +16,6 @@ trait TrackingService[F[_]]:
     externalId: String
   ): F[Either[TrackingError, List[PriceUpdate]]]
 
-  def listProducts(platform: Option[String]): F[List[TrackedProduct]]
+  def listProducts(platform: Option[String]): F[List[CatalogueProduct]]
+
+  def getTrackingRequestHistory(url: String) : F[List[TrackedPriceRecord]]
